@@ -16,8 +16,18 @@ export function Hero() {
             <Icon name="verified" className="text-[16px]" />
             Trusted by Students Worldwide
           </span>
+<<<<<<< Updated upstream
           <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-on-surface md:text-5xl lg:text-6xl">
             Achieve Your Dream <span className="text-primary">SAT Score</span> & College Admission
+=======
+
+          <h1 
+            className="text-5xl leading-[1.08] tracking-[-0.01em] text-on-surface sm:text-6xl lg:text-7xl"
+            style={{ fontFamily: '"Arial Black", Arial, sans-serif', fontWeight: 900 }}
+          >
+            Elevate Your <br />
+            <span className="text-accent">Academic Destiny.</span>
+>>>>>>> Stashed changes
           </h1>
           <p className="mt-6 max-w-xl text-lg text-on-surface-variant">
             Personalized SAT preparation, expert college counseling, essay reviews, and proven

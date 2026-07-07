@@ -290,7 +290,9 @@ function SATRunner() {
       <div className="sticky top-0 z-40 bg-primary text-on-primary px-4 py-2.5">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="font-bold text-sm">{currentModule.name}</div>
+            <div className="font-bold text-sm">
+              {currentModule.name.replace(/\s*-\s*(Easier|Harder)/i, "")}
+            </div>
             <Badge variant={currentModule.section === "MATH" ? "info" : "accent"} className="!text-[10px]">
               {currentModule.section === "MATH" ? "Math" : "R&W"}
             </Badge>

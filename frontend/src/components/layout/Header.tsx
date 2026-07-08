@@ -25,7 +25,7 @@ export function Header() {
 
   const links = [
     { to: "/", hash: "services", label: "Services" },
-    { to: "/", hash: "timeline", label: "Timeline" },
+    { to: "/booking", hash: undefined, label: "Book Session" },
     { to: "/success-stories", hash: undefined, label: "Success Stories" },
     { to: "/subscriptions", hash: undefined, label: "Pricing" },
     { to: "/contact", hash: undefined, label: "Contact" },

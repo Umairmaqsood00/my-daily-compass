@@ -26,13 +26,69 @@ interface ParsedModule {
   questions: ParsedQuestion[];
 }
 
+function cleanQuestionText(lines: string[], isMath: boolean): string {
+  const newLinePattern = /^(the\s+following\s+(text|passage)|adapted\s+from|text\s+\d+|passage\s+\d+|which\s+(choice|option|finding|of|phrase|word|sentence|quote|passage|student|statement|result|diagram|graph|table|inequality|equation|value|formula|system|relationship|method|data|list|figure|representation)|based\s+on|how\s+(does|do|is|should)\b|what\s+(is|does|are|value|price|height)\b|in\s+the\s+(figure|xy\-plane)\b|according\s+to\s+the|to\s+the\s+nearest|solve\b|\(student\-produced\s+response)/i;
+
+  const cleanLines = lines.map(l => l.trim()).filter(l => l.length > 0);
+  if (cleanLines.length === 0) return "";
+
+  let result = cleanLines[0];
+  let inIntro = /^the\s+following\s+(text|passage)/i.test(cleanLines[0]) || /^adapted\s+from/i.test(cleanLines[0]);
+  let prevEndsWithPunct = /[.\?\!]$/.test(cleanLines[0]);
+
+  const isMathLine = (l: string) => {
+    // If it contains equals sign
+    if (l.includes("=")) return true;
+    // If it has math operators/variables and is short
+    if (l.length < 50 && /^[a-z0-9\s\+\-\*\/\(\)\{\}\[\]\^\.\,\;\:\/\\]+$/i.test(l) && /[\+\-\*\/\^]/.test(l)) return true;
+    return false;
+  };
+
+  for (let i = 1; i < cleanLines.length; i++) {
+    const currentLine = cleanLines[i];
+    const prevLine = cleanLines[i - 1];
+
+    const isCurrentMath = isMathLine(currentLine);
+    const isPrevMath = isMathLine(prevLine);
+
+    // Determine if we should start a new line
+    let shouldStartNewLine = false;
+
+    if (newLinePattern.test(currentLine)) {
+      shouldStartNewLine = true;
+    } else if (isMath && (isCurrentMath || isPrevMath)) {
+      shouldStartNewLine = true;
+    } else if (inIntro && prevEndsWithPunct) {
+      shouldStartNewLine = true;
+      inIntro = false;
+    }
+
+    if (shouldStartNewLine) {
+      result += "\n" + currentLine;
+    } else {
+      result += " " + currentLine;
+    }
+
+    // Update states
+    if (/^the\s+following\s+(text|passage)/i.test(currentLine) || /^adapted\s+from/i.test(currentLine)) {
+      inIntro = true;
+    }
+    prevEndsWithPunct = /[.\?\!]$/.test(currentLine);
+    if (inIntro && prevEndsWithPunct) {
+      inIntro = false; // end intro on this line's end
+    }
+  }
+
+  return result.trim();
+}
+
 function parseQuestionsFile(filePath: string): ParsedModule[] {
   const content = fs.readFileSync(filePath, "utf-8");
   const lines = content.split("\n").map(l => l.replace(/\r/g, "").trim());
 
   const modules: ParsedModule[] = [];
   let currentSection: "READING_WRITING" | "MATH" | null = null;
-  let currentModuleType: "MOD1" | "MOD2_EASY" | "MOD2_HARD" | null = null;
+  let currentModuleType: "MOD1" | "MOD2_EASY" | "MOD2_HARD" | "MOD2" | null = null;
   let currentModuleName = "";
   let currentModuleQuestions: ParsedQuestion[] = [];
 
@@ -44,7 +100,7 @@ function parseQuestionsFile(filePath: string): ParsedModule[] {
   const flushQuestion = () => {
     if (currentQuestion) {
       if (questionTextLines.length > 0) {
-        currentQuestion.text = questionTextLines.join("\n").trim();
+        currentQuestion.text = cleanQuestionText(questionTextLines, currentSection === "MATH");
       }
       // If there are no options, treat as free response
       if (currentQuestion.options.length === 0) {
@@ -61,12 +117,27 @@ function parseQuestionsFile(filePath: string): ParsedModule[] {
   const flushModule = () => {
     flushQuestion();
     if (currentSection && currentModuleType && currentModuleQuestions.length > 0) {
-      modules.push({
-        name: currentModuleName,
-        section: currentSection,
-        moduleType: currentModuleType,
-        questions: currentModuleQuestions,
-      });
+      if (currentModuleType === "MOD2") {
+        modules.push({
+          name: currentModuleName + " - Easier",
+          section: currentSection,
+          moduleType: "MOD2_EASY",
+          questions: JSON.parse(JSON.stringify(currentModuleQuestions)),
+        });
+        modules.push({
+          name: currentModuleName + " - Harder",
+          section: currentSection,
+          moduleType: "MOD2_HARD",
+          questions: JSON.parse(JSON.stringify(currentModuleQuestions)),
+        });
+      } else {
+        modules.push({
+          name: currentModuleName,
+          section: currentSection,
+          moduleType: currentModuleType as "MOD1" | "MOD2_EASY" | "MOD2_HARD",
+          questions: currentModuleQuestions,
+        });
+      }
     }
     currentModuleQuestions = [];
   };
@@ -75,37 +146,47 @@ function parseQuestionsFile(filePath: string): ParsedModule[] {
     const line = lines[i];
     if (!line) continue;
 
-    if (line.toLowerCase().startsWith("answer:")) {
+    // Strip markdown formatting symbols at the start and end of the line
+    const cleanLine = line.replace(/^[#\*_\s]+|[#\*_\s]+$/g, "").trim();
+    if (!cleanLine) continue;
+
+    if (cleanLine.toLowerCase().startsWith("answer:")) {
       continue;
     }
 
     // Check for Section headers (supporting separate or combined format, e.g., "Section 1: Reading & Writing — Module 1" or "Section 1 — Module 1")
-    const isSec1 = /^Section\s*1\b/i.test(line);
-    const isSec2 = /^Section\s*2\b/i.test(line);
+    const isSec1 = /^Section\s*1\b/i.test(cleanLine);
+    const isSec2 = /^Section\s*2\b/i.test(cleanLine);
 
     if (isSec1 || isSec2) {
       flushModule();
       currentSection = isSec1 ? "READING_WRITING" : "MATH";
 
       // If module type is combined on the section line
-      if (/Module 1|Mod 1/i.test(line)) {
+      if (/Module 1|Mod 1/i.test(cleanLine)) {
         currentModuleType = "MOD1";
         currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 1" : "Math Module 1";
-      } else if (/Module 2/i.test(line) && /Easier|Easy/i.test(line)) {
-        currentModuleType = "MOD2_EASY";
-        currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 2 - Easier" : "Math Module 2 - Easier";
-      } else if (/Module 2/i.test(line) && /Harder|Hard/i.test(line)) {
-        currentModuleType = "MOD2_HARD";
-        currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 2 - Harder" : "Math Module 2 - Harder";
+      } else if (/Module 2|Mod 2/i.test(cleanLine)) {
+        if (/Easier|Easy/i.test(cleanLine)) {
+          currentModuleType = "MOD2_EASY";
+          currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 2 - Easier" : "Math Module 2 - Easier";
+        } else if (/Harder|Hard/i.test(cleanLine)) {
+          currentModuleType = "MOD2_HARD";
+          currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 2 - Harder" : "Math Module 2 - Harder";
+        } else {
+          currentModuleType = "MOD2";
+          currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 2" : "Math Module 2";
+        }
       }
       continue;
     }
 
     // Check for separate Module headers
     if (currentSection) {
-      const isMod1 = /^Module\s*1\b/i.test(line) && !/Module\s*2/i.test(line);
-      const isMod2Easy = /^Module\s*2\b/i.test(line) && /Easier|Easy/i.test(line);
-      const isMod2Hard = /^Module\s*2\b/i.test(line) && /Harder|Hard/i.test(line);
+      const isMod1 = /^Module\s*1\b/i.test(cleanLine) && !/Module\s*2/i.test(cleanLine);
+      const isMod2Easy = /^Module\s*2\b/i.test(cleanLine) && /Easier|Easy/i.test(cleanLine);
+      const isMod2Hard = /^Module\s*2\b/i.test(cleanLine) && /Harder|Hard/i.test(cleanLine);
+      const isMod2 = /^Module\s*2\b/i.test(cleanLine) && !/Easier|Easy|Harder|Hard/i.test(cleanLine);
 
       if (isMod1) {
         flushModule();
@@ -125,49 +206,67 @@ function parseQuestionsFile(filePath: string): ParsedModule[] {
         currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 2 - Harder" : "Math Module 2 - Harder";
         continue;
       }
+      if (isMod2) {
+        flushModule();
+        currentModuleType = "MOD2";
+        currentModuleName = currentSection === "READING_WRITING" ? "Reading & Writing Module 2" : "Math Module 2";
+        continue;
+      }
     }
 
     // Skip helper page markers, separator lines, and grid-in instructions
-    if (/^--\s*\d+\s*of\s*\d+\s*--$/i.test(line)) continue;
-    if (/^Total:\s*\d+\s*Questions/i.test(line)) continue;
-    if (/^Approximately\s*\d+%/i.test(line)) continue;
-    if (/^\(Student-produced response\s*—\s*grid-in\)/i.test(line)) continue;
-    if (line.startsWith("These questions are 100% original")) continue;
-    if (line.startsWith("ADAPTIVE DIGITAL SAT")) continue;
-    if (line.startsWith("DSAT_Dec_2024")) continue;
+    if (/^--\s*\d+\s*of\s*\d+\s*--$/i.test(cleanLine)) continue;
+    if (/^Total:\s*\d+\s*Questions/i.test(cleanLine)) continue;
+    if (/^Approximately\s*\d+%/i.test(cleanLine)) continue;
+    if (/^\(Student-produced response\s*—\s*grid-in\)/i.test(cleanLine)) continue;
+    if (cleanLine.startsWith("These questions are 100% original")) continue;
+    if (cleanLine.startsWith("ADAPTIVE DIGITAL SAT")) continue;
+    if (cleanLine.startsWith("DSAT_Dec_2024")) continue;
 
-    // Check for Question start
-    const qMatch = line.match(/^Question\s+(\d+)\s*$/i);
+    // Check for Question start (e.g. "Question 1")
+    const qMatch = cleanLine.match(/^Question\s+(\d+)\s*$/i);
     if (qMatch) {
       flushQuestion();
+      
+      // Look ahead for Skill and Difficulty
+      let skillStr = "";
+      let difficultyStr = "";
+      for (let offset = 1; offset <= 3 && i + offset < lines.length; offset++) {
+        const nextRawLine = lines[i + offset] ? lines[i + offset].trim() : "";
+        const cleanNextLine = nextRawLine.replace(/^[#\*_\s]+|[#\*_\s]+$/g, "").trim();
+        if (cleanNextLine.toLowerCase().startsWith("skill:")) {
+          const skillMatch = cleanNextLine.match(/^Skill:\s*(.*?)(?:\s*\|\s*Difficulty:\s*(EASY|MEDIUM|HARD))?$/i);
+          if (skillMatch) {
+            skillStr = skillMatch[1].trim();
+            if (skillMatch[2]) {
+              difficultyStr = skillMatch[2].toUpperCase();
+            }
+          }
+          i += offset; // skip these line(s) in main loop
+          break;
+        }
+      }
+
       currentQuestion = {
         questionNumber: parseInt(qMatch[1], 10),
-        skill: "",
-        difficulty: "MEDIUM",
+        skill: skillStr,
+        difficulty: (difficultyStr || "MEDIUM") as "EASY" | "MEDIUM" | "HARD",
         text: "",
         options: [],
         correctAnswer: "",
         explanation: "",
         isFreeResponse: false,
       };
-      // Look at next line for Skill & Difficulty
-      const nextLine = lines[i + 1] ? lines[i + 1].trim() : "";
-      const skillMatch = nextLine.match(/^Skill:\s*(.*?)\s*\|\s*Difficulty:\s*(EASY|MEDIUM|HARD)/i);
-      if (skillMatch) {
-        currentQuestion.skill = skillMatch[1].trim();
-        currentQuestion.difficulty = skillMatch[2].toUpperCase() as "EASY" | "MEDIUM" | "HARD";
-        i++; // skip next line
-      }
       continue;
     }
 
     if (!currentQuestion) continue;
 
     // Check for Option A) B) C) D)
-    const optMatch = line.match(/^([A-D])\)\s*(.*)/);
+    const optMatch = cleanLine.match(/^([A-D])\)\s*(.*)/);
     if (optMatch) {
       if (questionTextLines.length > 0) {
-        currentQuestion.text = questionTextLines.join("\n").trim();
+        currentQuestion.text = cleanQuestionText(questionTextLines, currentSection === "MATH");
         questionTextLines = [];
       }
       collectingOptions = true;
@@ -181,7 +280,7 @@ function parseQuestionsFile(filePath: string): ParsedModule[] {
     }
 
     if (collectingOptions && lastOption) {
-      lastOption.text = `${lastOption.text} ${line}`.trim();
+      lastOption.text = `${lastOption.text} ${cleanLine}`.trim();
       continue;
     }
 
@@ -211,7 +310,7 @@ function parseSolutionsFile(filePath: string): ParsedSolModule[] {
 
   const solModules: ParsedSolModule[] = [];
   let currentSection: "READING_WRITING" | "MATH" | null = null;
-  let currentModuleType: "MOD1" | "MOD2_EASY" | "MOD2_HARD" | null = null;
+  let currentModuleType: "MOD1" | "MOD2_EASY" | "MOD2_HARD" | "MOD2" | null = null;
   let currentSolList: ParsedSolution[] = [];
 
   let currentSol: ParsedSolution | null = null;
@@ -231,24 +330,44 @@ function parseSolutionsFile(filePath: string): ParsedSolModule[] {
     flushSol();
     waitingForAnswer = false;
     if (currentSection && currentModuleType && currentSolList.length > 0) {
-      solModules.push({
-        section: currentSection,
-        moduleType: currentModuleType,
-        solutions: currentSolList,
-      });
+      if (currentModuleType === "MOD2") {
+        solModules.push({
+          section: currentSection,
+          moduleType: "MOD2_EASY",
+          solutions: JSON.parse(JSON.stringify(currentSolList)),
+        });
+        solModules.push({
+          section: currentSection,
+          moduleType: "MOD2_HARD",
+          solutions: JSON.parse(JSON.stringify(currentSolList)),
+        });
+      } else {
+        solModules.push({
+          section: currentSection,
+          moduleType: currentModuleType as "MOD1" | "MOD2_EASY" | "MOD2_HARD",
+          solutions: currentSolList,
+        });
+      }
     }
     currentSolList = [];
   };
 
   const cleanAnswer = (rawAns: string, section: string, moduleType: string, qNum: number): string => {
     let ans = rawAns.trim();
-    // Strip "Answer:" or "Grid-in:" prefix if present
-    ans = ans.replace(/^(Answer|Grid-in):\s*/i, "").trim();
+    // Strip leading/trailing markdown characters and whitespace
+    ans = ans.replace(/^[#\*_\s]+|[#\*_\s]+$/g, "").trim();
+    // Strip "Answer:" or "Grid-in:" or "Ans:" or "Corrected answer:" or "Best available answer:" or "Corrected:" prefix if present
+    ans = ans.replace(/^(Answer|Grid-in|Ans|Corrected\s*answer|Best\s*available\s*answer|Corrected):\s*/i, "").trim();
     
     // Extract A, B, C, D if it's multiple choice
-    const optMatch = ans.match(/^([A-D])(?:\s+|\)|\]|\b)/i);
+    const optMatch = ans.match(/^([A-D])(?:\s+|\)|\]|\b)/i) || ans.match(/^([A-D])$/i);
     if (optMatch) {
       return optMatch[1].toUpperCase();
+    }
+
+    // If it has "or", take the first one
+    if (ans.toLowerCase().includes(" or ")) {
+      ans = ans.split(/\s+or\s+/i)[0].trim();
     }
     
     // Strip "See note" math patches
@@ -270,101 +389,123 @@ function parseSolutionsFile(filePath: string): ParsedSolModule[] {
     const line = lines[i];
     if (!line) continue;
 
-    // Check for Section headers (supporting separate or combined format, e.g., "Section 1: Reading & Writing — Module 1" or "Section 1 — Module 1")
-    const isSec1 = /^Section\s*1\b/i.test(line);
-    const isSec2 = /^Section\s*2\b/i.test(line);
+    // Strip markdown formatting symbols at the start and end of the line
+    const cleanLine = line.replace(/^[#\*_\s]+|[#\*_\s]+$/g, "").trim();
+    if (!cleanLine) continue;
 
-    if (isSec1 || isSec2) {
-      flushSolModule();
-      currentSection = isSec1 ? "READING_WRITING" : "MATH";
-      if (/Module 1|Mod 1/i.test(line)) currentModuleType = "MOD1";
-      else if (/Module 2/i.test(line) && /Easier|Easy/i.test(line)) currentModuleType = "MOD2_EASY";
-      else if (/Module 2/i.test(line) && /Harder|Hard/i.test(line)) currentModuleType = "MOD2_HARD";
-      continue;
-    }
-
-    if (currentSection) {
-      const isMod1 = /^Module\s*1\b/i.test(line) && !/Module\s*2/i.test(line);
-      const isMod2Easy = /^Module\s*2\b/i.test(line) && /Easier|Easy/i.test(line);
-      const isMod2Hard = /^Module\s*2\b/i.test(line) && /Harder|Hard/i.test(line);
-      if (isMod1 || isMod2Easy || isMod2Hard) {
-        flushSolModule();
-        if (isMod1) currentModuleType = "MOD1";
-        else if (isMod2Easy) currentModuleType = "MOD2_EASY";
-        else currentModuleType = "MOD2_HARD";
-        continue;
-      }
-    }
-
-    // Format 1: Question 1 — Answer: C
-    let qMatch = line.match(/^Question\s+(\d+)\s*—\s*(.*)/i);
-    if (qMatch) {
-      flushSol();
-      const questionNumber = parseInt(qMatch[1], 10);
-      const rest = qMatch[2].trim();
-      const answer = cleanAnswer(rest, currentSection || "", currentModuleType || "", questionNumber);
-
-      currentSol = {
-        questionNumber,
-        answer,
-        explanation: "",
-      };
-      
-      const answerPrefix = rest.match(/^(Answer|Grid-in):\s*[A-D0-9]/i) || rest.match(/^[A-D0-9]/i);
-      if (answerPrefix) {
-        const firstExpl = rest.substring(answerPrefix[0].length).trim();
-        if (firstExpl) explLines.push(firstExpl);
-      }
-      continue;
-    }
-
-    // Format 2: Question 1
-    qMatch = line.match(/^Question\s+(\d+)\s*$/i);
-    if (qMatch) {
-      flushSol();
-      const questionNumber = parseInt(qMatch[1], 10);
-      currentSol = {
-        questionNumber,
-        answer: "",
-        explanation: "",
-      };
-      waitingForAnswer = true;
-      continue;
-    }
-
-    if (waitingForAnswer && currentSol && line.toLowerCase().startsWith("answer:")) {
-      currentSol.answer = cleanAnswer(line, currentSection || "", currentModuleType || "", currentSol.questionNumber);
-      waitingForAnswer = false;
-      continue;
-    }
-
-    // Format 3: Q1. Answer: A) detect
-    qMatch = line.match(/^Q(\d+)\.\s*(.*)/i);
-    if (qMatch) {
-      flushSol();
-      const questionNumber = parseInt(qMatch[1], 10);
-      const rest = qMatch[2].trim();
-      const answer = cleanAnswer(rest, currentSection || "", currentModuleType || "", questionNumber);
-
-      currentSol = {
-        questionNumber,
-        answer,
-        explanation: "",
-      };
-
-      const answerPrefix = rest.match(/^(Answer|Grid-in):\s*[A-D]/i) || rest.match(/^[A-D]\)?\s*/i);
-      if (answerPrefix) {
-        const firstExpl = rest.substring(answerPrefix[0].length).trim();
-        if (firstExpl) explLines.push(firstExpl);
-      }
-      continue;
-    }
-
-    if (/^Quick-Reference\s*Answer\s*Grid/i.test(line)) {
+    if (/^Quick-Reference\s*Answer/i.test(cleanLine)) {
       flushSolModule();
       currentSection = null;
       currentModuleType = null;
       continue;
+    }
+
+    // Check for Section headers (supporting separate or combined format, e.g., "Section 1: Reading & Writing — Module 1" or "Section 1 — Module 1")
+    const isSec1 = /^Section\s*1\b/i.test(cleanLine);
+    const isSec2 = /^Section\s*2\b/i.test(cleanLine);
+
+    if (isSec1 || isSec2) {
+      flushSolModule();
+      currentSection = isSec1 ? "READING_WRITING" : "MATH";
+      if (/Module\s*1|Mod\s*1/i.test(cleanLine)) {
+        currentModuleType = "MOD1";
+      } else if (/Module\s*2|Mod\s*2/i.test(cleanLine)) {
+        if (/Easier|Easy/i.test(cleanLine)) currentModuleType = "MOD2_EASY";
+        else if (/Harder|Hard/i.test(cleanLine)) currentModuleType = "MOD2_HARD";
+        else currentModuleType = "MOD2";
+      }
+      continue;
+    }
+
+    if (currentSection) {
+      const isMod1 = /^Module\s*1\b/i.test(cleanLine) && !/Module\s*2/i.test(cleanLine);
+      const isMod2Easy = /^Module\s*2\b/i.test(cleanLine) && /Easier|Easy/i.test(cleanLine);
+      const isMod2Hard = /^Module\s*2\b/i.test(cleanLine) && /Harder|Hard/i.test(cleanLine);
+      const isMod2 = /^Module\s*2\b/i.test(cleanLine) && !/Easier|Easy|Harder|Hard/i.test(cleanLine);
+      if (isMod1 || isMod2Easy || isMod2Hard || isMod2) {
+        flushSolModule();
+        if (isMod1) currentModuleType = "MOD1";
+        else if (isMod2Easy) currentModuleType = "MOD2_EASY";
+        else if (isMod2Hard) currentModuleType = "MOD2_HARD";
+        else currentModuleType = "MOD2";
+        continue;
+      }
+    }
+
+    // Check for Question start in solutions (supporting formats: Question 1, Q1, Q1.)
+    let qMatch = cleanLine.match(/^Question\s+(\d+)\b(.*)/i) || cleanLine.match(/^Q(\d+)\b(.*)/i);
+    if (qMatch) {
+      flushSol();
+      const questionNumber = parseInt(qMatch[1], 10);
+      const rest = qMatch[2].replace(/^[:\s—\.-]+/, "").trim(); // strip leading colon, dash, dot, space
+
+      // Check if the answer is inline
+      const hasAnswerInline = /^[A-D](?:\s+|\)|\]|$)/i.test(rest) || 
+                              /^(Answer|Grid-in|Ans|Corrected\s*answer|Best\s*available\s*answer|Corrected):/i.test(rest) ||
+                              /^[A-D]$/i.test(rest) ||
+                              /^see\s+note/i.test(rest) ||
+                              /^[-−]?\d+/i.test(rest) ||
+                              (currentSection === "MATH" && rest.length > 0);
+                              
+      let answer = "";
+      if (hasAnswerInline) {
+        answer = cleanAnswer(rest, currentSection || "", currentModuleType || "", questionNumber);
+      } else {
+        waitingForAnswer = true;
+      }
+
+      currentSol = {
+        questionNumber,
+        answer,
+        explanation: "",
+      };
+
+      if (hasAnswerInline) {
+        // Strip out the answer prefix to get potential starting explanation
+        const cleanRest = rest.replace(/^(Answer|Grid-in|Ans|Corrected\s*answer|Best\s*available\s*answer|Corrected):\s*/i, "").trim();
+        const optMatch = cleanRest.match(/^([A-D])(?:\s+|\)|\]|\b)/i) || cleanRest.match(/^([A-D])$/i);
+        let firstExpl = cleanRest;
+        if (optMatch) {
+          firstExpl = cleanRest.substring(optMatch[0].length).trim();
+        } else if (/^[-−]?\d+/.test(cleanRest)) {
+          const mathAnsPrefix = cleanRest.match(/^[-−]?\d+(?:\/\d+)?(?:\.\d+)?/);
+          if (mathAnsPrefix) {
+            firstExpl = cleanRest.substring(mathAnsPrefix[0].length).trim();
+          }
+        }
+        if (firstExpl) {
+          explLines.push(firstExpl);
+        }
+      }
+      continue;
+    }
+
+    if (waitingForAnswer && currentSol) {
+      const isAnswerLine = /^(Answer|Grid-in|Ans|Corrected\s*answer|Best\s*available\s*answer|Corrected):/i.test(cleanLine) ||
+                           /^[A-D](?:\s+|\)|\]|$)/i.test(cleanLine) ||
+                           /^[-−]?\d+/.test(cleanLine) ||
+                           /^see\s+note/i.test(cleanLine) ||
+                           (currentSection === "MATH" && cleanLine.length > 0);
+      if (isAnswerLine) {
+        currentSol.answer = cleanAnswer(cleanLine, currentSection || "", currentModuleType || "", currentSol.questionNumber);
+        waitingForAnswer = false;
+
+        const cleanRest = cleanLine.replace(/^(Answer|Grid-in|Ans|Corrected\s*answer|Best\s*available\s*answer|Corrected):\s*/i, "").trim();
+        const optMatch = cleanRest.match(/^([A-D])(?:\s+|\)|\]|\b)/i) || cleanRest.match(/^([A-D])$/i);
+        let firstExpl = cleanRest;
+        if (optMatch) {
+          firstExpl = cleanRest.substring(optMatch[0].length).trim();
+        } else if (/^\d+/.test(cleanRest)) {
+          const mathAnsPrefix = cleanRest.match(/^\d+(?:\/\d+)?(?:\.\d+)?/);
+          if (mathAnsPrefix) {
+            firstExpl = cleanRest.substring(mathAnsPrefix[0].length).trim();
+          }
+        }
+        if (firstExpl) {
+          explLines.push(firstExpl);
+        }
+        continue;
+      }
     }
 
     if (currentSol) {
@@ -440,13 +581,21 @@ async function main() {
   const uploadsDir = path.resolve(__dirname, "../../uploads/sat");
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-  for (let tNum = 1; tNum <= 6; tNum++) {
+  const testsToImport = [1, 2, 3, 4, 5, 6, 7, 10];
+  for (const tNum of testsToImport) {
     console.log(`\n=========================================`);
     console.log(`PROCESSING DSAT TEST #${tNum}`);
     console.log(`=========================================`);
 
     let questionsPath = path.join(digitalsatpapersDir, `DSAT${tNum}_text.txt`);
+    if (!fs.existsSync(questionsPath)) {
+      questionsPath = path.join(digitalsatpapersDir, `DSAT${tNum}.md`);
+    }
+
     let solutionsPath = path.join(digitalsatpapersDir, `DSAT${tNum}sol_text.txt`);
+    if (!fs.existsSync(solutionsPath)) {
+      solutionsPath = path.join(digitalsatpapersDir, `DSAT${tNum}sol.md`);
+    }
 
     if (!fs.existsSync(questionsPath) || !fs.existsSync(solutionsPath)) {
       console.warn(`DSAT${tNum} questions or solutions text file not found, skipping.`);
@@ -504,8 +653,8 @@ async function main() {
       for (const q of parsedMod.questions) {
         const solKey = `${keyConfig.section}-${keyConfig.moduleType}-${q.questionNumber}`;
         const sol = solMap.get(solKey);
-        if (!sol) {
-          throw new Error(`No solution found for question ${q.questionNumber} in ${keyConfig.name}`);
+        if (!sol || !sol.answer) {
+          throw new Error(`No answer/solution found for question ${q.questionNumber} in ${keyConfig.name}. parsedSol: ${JSON.stringify(sol)}`);
         }
 
         const catName = classifyCategory(q.skill, keyConfig.section);

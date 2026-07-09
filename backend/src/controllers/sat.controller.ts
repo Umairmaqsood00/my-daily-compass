@@ -312,9 +312,11 @@ async function finalizeAttempt(attempt: any, res: Response) {
     totalCorrect += mod.correctCount;
     totalQuestions += mod.totalQuestions;
     if (mod.startedAt && mod.completedAt) {
-      totalTime += Math.round(
+      const moduleLimitMinutes = test?.modules?.[mod.moduleIndex]?.timeLimitMinutes || 35;
+      const actualTimeSpent = Math.round(
         (new Date(mod.completedAt).getTime() - new Date(mod.startedAt).getTime()) / 1000
       );
+      totalTime += Math.min(actualTimeSpent, moduleLimitMinutes * 60);
     }
   }
 

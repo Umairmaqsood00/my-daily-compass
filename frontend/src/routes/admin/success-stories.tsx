@@ -7,7 +7,7 @@ import { Icon } from "../../components/common/Icon";
 import { Input } from "../../components/ui/Input";
 import { Textarea } from "../../components/ui/Textarea";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { api, API_BASE_URL } from "../../services/api";
+import { api, API_BASE_URL, resolveImageUrl } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 
 export const Route = createFileRoute("/admin/success-stories")({
@@ -190,7 +190,7 @@ function AdminSuccessStories() {
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
             {heroFeature.imageUrl ? (
               <img
-                src={heroFeature.imageUrl.startsWith("http") ? heroFeature.imageUrl : `${API_BASE_URL}${heroFeature.imageUrl}`}
+                src={resolveImageUrl(heroFeature.imageUrl)}
                 alt={heroFeature.studentName}
                 className="w-16 h-16 rounded-xl object-cover border border-outline-variant/50 shadow-sm shrink-0"
               />
@@ -230,7 +230,7 @@ function AdminSuccessStories() {
               <div>
                 <div className="flex items-center gap-4 mb-4">
                   {story.imageUrl ? (
-                    <img src={story.imageUrl.startsWith("http") ? story.imageUrl : `${API_BASE_URL}${story.imageUrl}`} alt={story.name} className="w-12 h-12 rounded-full object-cover border border-outline-variant" />
+                    <img src={resolveImageUrl(story.imageUrl)} alt={story.name} className="w-12 h-12 rounded-full object-cover border border-outline-variant" />
                   ) : (
                     <div className="grid h-12 w-12 place-items-center rounded-full bg-primary text-on-primary font-display text-lg font-bold">{story.name.charAt(0)}</div>
                   )}

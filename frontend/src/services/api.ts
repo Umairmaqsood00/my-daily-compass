@@ -4,6 +4,18 @@ export const API_BASE_URL = (
   ""
 ).replace(/\/$/, "");
 
+export const resolveImageUrl = (url: string) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  
+  const isDev = (
+    (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV) ||
+    (typeof process !== "undefined" && process.env && process.env.NODE_ENV === "development")
+  );
+  const base = isDev ? "http://localhost:5000" : "";
+  return `${base}${url}`;
+};
+
 const getUrl = (url: string) => url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
 
 // simple API wrapper with auth token injection and error handling

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Icon } from "../common/Icon";
 import studentHero from "../../assets/student_hero.png";
 import { Link } from "@tanstack/react-router";
-import { api, API_BASE_URL } from "../../services/api";
+import { api, resolveImageUrl } from "../../services/api";
 
 export function Hero() {
   const [feature, setFeature] = useState({
@@ -23,10 +23,9 @@ export function Hero() {
     });
   }, []);
 
-  const resolveImageUrl = (url: string) => {
+  const resolveHeroImageUrl = (url: string) => {
     if (!url) return studentHero;
-    if (url.startsWith("http")) return url;
-    return `${API_BASE_URL}${url}`;
+    return resolveImageUrl(url);
   };
   return (
     <section id="top" className="relative pt-4 pb-28 md:pt-8 md:pb-40 overflow-hidden bg-background">
@@ -113,7 +112,7 @@ export function Hero() {
 
             {/* Main Student Portrait */}
             <img
-              src={resolveImageUrl(feature.imageUrl)}
+              src={resolveHeroImageUrl(feature.imageUrl)}
               alt={feature.studentName}
               className="w-full h-auto object-cover rounded-xl shark-shadow border border-outline-variant/60"
             />

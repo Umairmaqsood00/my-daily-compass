@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 import { Icon } from "../components/common/Icon";
-import { api, API_BASE_URL } from "../services/api";
+import { api, resolveImageUrl } from "../services/api";
 
 export const Route = createFileRoute("/success-stories")({
   component: SuccessStories,
@@ -13,12 +13,6 @@ function SuccessStories() {
   const [stories, setStories] = useState<any[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const resolveImageUrl = (url: string) => {
-    if (!url) return "";
-    if (url.startsWith("http")) return url;
-    return `${API_BASE_URL}${url}`;
-  };
 
   useEffect(() => {
     const fetchStories = async () => {

@@ -3,6 +3,7 @@ import SATTest from "../models/SATTest";
 import SATTestAttempt from "../models/SATTestAttempt";
 import Question from "../models/Question";
 import { AuthRequest } from "../middleware/auth.middleware";
+import { checkAnswerCorrectness } from "../utils/grading";
 
 // --- Student: list available SAT tests ---
 export const getSATTests = async (req: AuthRequest, res: Response) => {
@@ -194,7 +195,7 @@ export const completeModule = async (req: AuthRequest, res: Response) => {
       
       const selectedAnswer = incomingAns?.selectedAnswer || null;
       const isCorrect = q && selectedAnswer
-        ? q.correctAnswer.trim().toLowerCase() === selectedAnswer.trim().toLowerCase()
+        ? checkAnswerCorrectness(q.correctAnswer, selectedAnswer)
         : false;
 
       if (isCorrect) correctCount++;

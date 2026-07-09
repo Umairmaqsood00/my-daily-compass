@@ -87,19 +87,8 @@ function SATResult() {
           <h1 className="text-3xl font-bold mb-2">SAT Test Results</h1>
           <p className="text-on-surface-variant mb-4">{test?.title || "SAT Practice Test"}</p>
           
-          <div className="flex justify-center gap-3">
-            {test?.pdfUrl && (
-              <a
-                href={test.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/60 rounded-xl text-xs font-bold uppercase tracking-wider text-on-surface transition-all duration-300 shadow-sm cursor-pointer"
-              >
-                <Icon name="download" className="text-[16px]" />
-                Test Paper PDF
-              </a>
-            )}
-            {test?.explanationPdfUrl && (
+          {test?.explanationPdfUrl && (
+            <div className="flex justify-center gap-3">
               <a
                 href={test.explanationPdfUrl}
                 target="_blank"
@@ -109,8 +98,8 @@ function SATResult() {
                 <Icon name="description" className="text-[16px]" />
                 Explanations PDF
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Overall Score */}

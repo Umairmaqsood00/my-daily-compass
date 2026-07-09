@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { Icon } from "../../components/common/Icon";
 import { Badge } from "../../components/ui/Badge";
 import { api } from "../../services/api";
@@ -9,6 +9,13 @@ import type { SATTest, SATModule, Question } from "../../types";
 export const Route = createFileRoute("/dashboard/sat-runner/$attemptId")({
   component: SATRunner,
 });
+
+const MathFraction = ({ num, den }: { num: ReactNode; den: ReactNode }) => (
+  <span className="inline-flex flex-col items-center justify-center align-middle mx-1 text-[10px] leading-none">
+    <span className="border-b border-current pb-0.5 px-0.5">{num}</span>
+    <span className="pt-0.5 px-0.5">{den}</span>
+  </span>
+);
 
 interface LocalAnswer {
   question: string;
@@ -69,7 +76,7 @@ function SATRunner() {
   const [showTime, setShowTime] = useState(true);
   const { user } = useAuth();
   const [showDirectionsModal, setShowDirectionsModal] = useState(false);
-  const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [showReferenceModal, setShowReferenceModal] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -380,8 +387,12 @@ function SATRunner() {
             {showMathTools && (
               <>
                 <button
-                  onClick={() => setShowCalculatorModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-low transition-colors text-xs font-semibold cursor-pointer"
+                  onClick={() => setShowCalculator(!showCalculator)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors text-xs font-semibold cursor-pointer ${
+                    showCalculator
+                      ? "bg-primary text-on-primary border-primary shadow-sm"
+                      : "border-outline-variant hover:bg-surface-container-low"
+                  }`}
                 >
                   <Icon name="calculate" className="text-[16px]" />
                   <span className="hidden sm:inline">Calculator</span>
@@ -407,159 +418,188 @@ function SATRunner() {
         />
       </div>
 
-      {/* Question Area */}
-      <div className="flex-1 flex justify-center w-full min-h-0 bg-background overflow-hidden">
-        {q && (
-          isRW ? (
-            /* Split Screen for Reading & Writing */
-            <div className="w-full max-w-[1400px] grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-5 h-full min-h-0 overflow-hidden">
-              {/* Left Column: Passage */}
-              <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
-                <div className="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex items-center justify-between">
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Passage</span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                  <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
-                </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex w-full min-h-0 bg-background overflow-hidden relative">
+        {/* Collapsible Desmos Calculator Panel */}
+        {showMathTools && showCalculator && (
+          <div className="w-[38%] min-w-[320px] max-w-[500px] border-r border-outline-variant/40 flex flex-col h-full bg-surface-container-lowest animate-slide-in-left">
+            <div className="bg-surface-container-low px-4 py-2 border-b border-outline-variant/30 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon name="calculate" className="text-primary text-[18px]" />
+                <span className="text-xs font-bold text-on-surface uppercase tracking-wider">Calculator</span>
               </div>
-
-              {/* Right Column: Question Prompt & Options */}
-              <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
-                <div className="bg-surface-container-low px-5 py-2.5 border-b border-outline-variant/30 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="h-6 w-6 bg-primary text-on-primary rounded flex items-center justify-center text-xs font-bold">
-                      {currentQuestionIndex + 1}
-                    </span>
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question</span>
-                  </div>
-
-                  <button
-                    onClick={() => toggleReview(q._id)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
-                        ? "bg-accent text-primary"
-                        : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-                      }`}
-                  >
-                    <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
-                    <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6">
-                  {rwSplit.prompt && (
-                    <p className="text-[15px] font-semibold text-on-surface leading-relaxed mb-5 whitespace-pre-wrap">{rwSplit.prompt}</p>
-                  )}
-
-                  {q.options && q.options.length > 0 && (
-                    <div className="space-y-2">
-                      {q.options.map((opt) => {
-                        const selected = currentAnswer?.selectedAnswer === opt.label;
-                        return (
-                          <button
-                            key={opt.label}
-                            onClick={() => selectAnswer(q._id, opt.label)}
-                            className={`w-full flex items-center gap-4 py-3 px-4 rounded-xl border-2 text-left transition-all cursor-pointer ${selected
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-outline-variant/40 hover:border-primary/40 hover:bg-surface-container-low"
-                              }`}
-                          >
-                            <span
-                              className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${selected
-                                  ? "bg-primary text-on-primary"
-                                  : "bg-surface-container-high text-on-surface"
-                                }`}
-                            >
-                              {opt.label}
-                            </span>
-                            <span className="text-sm leading-relaxed">{opt.text}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <button
+                onClick={() => setShowCalculator(false)}
+                className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant cursor-pointer transition-colors"
+                title="Close Calculator"
+              >
+                <Icon name="close" className="text-[16px]" />
+              </button>
             </div>
-          ) : (
-            /* Split Screen for Math */
-            <div className="w-full max-w-[1400px] grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-5 h-full min-h-0 overflow-hidden">
-              {/* Left Column: Math Question Text */}
-              <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
-                <div className="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex items-center justify-between">
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question Context</span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                  <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{q.text}</p>
-                </div>
-              </div>
-
-              {/* Right Column: MCQ Options or Student-Produced Response Input Field */}
-              <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
-                <div className="bg-surface-container-low px-5 py-2.5 border-b border-outline-variant/30 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="h-6 w-6 bg-primary text-on-primary rounded flex items-center justify-center text-xs font-bold">
-                      {currentQuestionIndex + 1}
-                    </span>
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Answer Choices</span>
-                  </div>
-
-                  <button
-                    onClick={() => toggleReview(q._id)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
-                        ? "bg-accent text-primary"
-                        : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-                      }`}
-                  >
-                    <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
-                    <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6">
-                  {q.options && q.options.length > 0 ? (
-                    <div className="space-y-2">
-                      {q.options.map((opt) => {
-                        const selected = currentAnswer?.selectedAnswer === opt.label;
-                        return (
-                          <button
-                            key={opt.label}
-                            onClick={() => selectAnswer(q._id, opt.label)}
-                            className={`w-full flex items-center gap-4 py-3 px-4 rounded-xl border-2 text-left transition-all cursor-pointer ${selected
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-outline-variant/40 hover:border-primary/40 hover:bg-surface-container-low"
-                              }`}
-                          >
-                            <span
-                              className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${selected
-                                  ? "bg-primary text-on-primary"
-                                  : "bg-surface-container-high text-on-surface"
-                                }`}
-                            >
-                              {opt.label}
-                            </span>
-                            <span className="text-sm leading-relaxed">{opt.text}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    /* Student-Produced Response Input Field */
-                    <div className="space-y-4">
-                      <label className="block text-sm font-bold text-on-surface uppercase tracking-wider">
-                        Enter Your Answer
-                      </label>
-                      <input
-                        type="text"
-                        value={currentAnswer?.selectedAnswer || ""}
-                        onChange={(e) => selectAnswer(q._id, e.target.value)}
-                        placeholder="Type your answer here..."
-                        className="w-full max-w-[300px] px-5 py-4 rounded-xl border-2 border-outline-variant/60 focus:border-primary focus:outline-none text-lg font-mono tracking-wide transition-all bg-surface text-on-surface focus:shadow-md"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="flex-1 w-full bg-white relative">
+              <iframe
+                src="https://www.desmos.com/testing/cb-digital-sat/graphing"
+                className="w-full h-full border-0 absolute inset-0"
+                title="Desmos Graphing Calculator"
+              />
             </div>
-          )
+          </div>
         )}
+
+        {/* Question Area */}
+        <div className="flex-1 flex justify-center min-h-0 overflow-hidden">
+          {q && (
+            isRW ? (
+              /* Split Screen for Reading & Writing */
+              <div className="w-full max-w-[1400px] grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-5 h-full min-h-0 overflow-hidden">
+                {/* Left Column: Passage */}
+                <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
+                  <div className="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex items-center justify-between">
+                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Passage</span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                    <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+                  </div>
+                </div>
+
+                {/* Right Column: Question Prompt & Options */}
+                <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
+                  <div className="bg-surface-container-low px-5 py-2.5 border-b border-outline-variant/30 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="h-6 w-6 bg-primary text-on-primary rounded flex items-center justify-center text-xs font-bold">
+                        {currentQuestionIndex + 1}
+                      </span>
+                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question</span>
+                    </div>
+
+                    <button
+                      onClick={() => toggleReview(q._id)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
+                          ? "bg-accent text-primary"
+                          : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                        }`}
+                    >
+                      <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
+                      <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6">
+                    {rwSplit.prompt && (
+                      <p className="text-[15px] font-semibold text-on-surface leading-relaxed mb-5 whitespace-pre-wrap">{rwSplit.prompt}</p>
+                    )}
+
+                    {q.options && q.options.length > 0 && (
+                      <div className="space-y-2">
+                        {q.options.map((opt) => {
+                          const selected = currentAnswer?.selectedAnswer === opt.label;
+                          return (
+                            <button
+                              key={opt.label}
+                              onClick={() => selectAnswer(q._id, opt.label)}
+                              className={`w-full flex items-center gap-4 py-3 px-4 rounded-xl border-2 text-left transition-all cursor-pointer ${selected
+                                  ? "border-primary bg-primary/5 shadow-sm"
+                                  : "border-outline-variant/40 hover:border-primary/40 hover:bg-surface-container-low"
+                                }`}
+                            >
+                              <span
+                                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${selected
+                                    ? "bg-primary text-on-primary"
+                                    : "bg-surface-container-high text-on-surface"
+                                  }`}
+                              >
+                                {opt.label}
+                              </span>
+                              <span className="text-sm leading-relaxed">{opt.text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Split Screen for Math */
+              <div className="w-full max-w-[1400px] grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-5 h-full min-h-0 overflow-hidden">
+                {/* Left Column: Math Question Text */}
+                <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
+                  <div className="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex items-center justify-between">
+                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question Context</span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                    <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{q.text}</p>
+                  </div>
+                </div>
+
+                {/* Right Column: MCQ Options or Student-Produced Response Input Field */}
+                <div className="flex flex-col h-full min-h-0 overflow-hidden bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shark-shadow">
+                  <div className="bg-surface-container-low px-5 py-2.5 border-b border-outline-variant/30 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="h-6 w-6 bg-primary text-on-primary rounded flex items-center justify-center text-xs font-bold">
+                        {currentQuestionIndex + 1}
+                      </span>
+                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Answer Choices</span>
+                    </div>
+
+                    <button
+                      onClick={() => toggleReview(q._id)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
+                          ? "bg-accent text-primary"
+                          : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                        }`}
+                    >
+                      <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
+                      <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6">
+                    {q.options && q.options.length > 0 ? (
+                      <div className="space-y-2">
+                        {q.options.map((opt) => {
+                          const selected = currentAnswer?.selectedAnswer === opt.label;
+                          return (
+                            <button
+                              key={opt.label}
+                              onClick={() => selectAnswer(q._id, opt.label)}
+                              className={`w-full flex items-center gap-4 py-3 px-4 rounded-xl border-2 text-left transition-all cursor-pointer ${selected
+                                  ? "border-primary bg-primary/5 shadow-sm"
+                                  : "border-outline-variant/40 hover:border-primary/40 hover:bg-surface-container-low"
+                                }`}
+                            >
+                              <span
+                                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${selected
+                                    ? "bg-primary text-on-primary"
+                                    : "bg-surface-container-high text-on-surface"
+                                  }`}
+                              >
+                                {opt.label}
+                              </span>
+                              <span className="text-sm leading-relaxed">{opt.text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* Student-Produced Response Input Field */
+                      <div className="space-y-4">
+                        <label className="block text-sm font-bold text-on-surface uppercase tracking-wider">
+                          Enter Your Answer
+                        </label>
+                        <input
+                          type="text"
+                          value={currentAnswer?.selectedAnswer || ""}
+                          onChange={(e) => selectAnswer(q._id, e.target.value)}
+                          placeholder="Type your answer here..."
+                          className="w-full max-w-[300px] px-5 py-4 rounded-xl border-2 border-outline-variant/60 focus:border-primary focus:outline-none text-lg font-mono tracking-wide transition-all bg-surface text-on-surface focus:shadow-md"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </div>
       </div>
 
       {/* Footer Navigation Bar */}
@@ -642,12 +682,12 @@ function SATRunner() {
           </div>
 
           {/* Right: Previous / Next Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {/* Back Button */}
             <button
               onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
               disabled={currentQuestionIndex === 0}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-outline-variant text-sm font-semibold disabled:opacity-30 hover:bg-surface-container-low transition-colors cursor-pointer"
+              className="flex items-center justify-center px-5 h-10 rounded-xl border border-outline-variant text-sm font-semibold disabled:opacity-30 disabled:pointer-events-none hover:bg-surface-container-low transition-all cursor-pointer"
             >
               Back
             </button>
@@ -656,7 +696,7 @@ function SATRunner() {
             {currentQuestionIndex < questions.length - 1 ? (
               <button
                 onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-                className="flex items-center gap-1.5 px-6 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-accent hover:text-primary transition-colors cursor-pointer"
+                className="flex items-center justify-center px-6 h-10 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-accent hover:text-primary transition-all cursor-pointer"
               >
                 Next
               </button>
@@ -664,7 +704,7 @@ function SATRunner() {
               <button
                 onClick={completeCurrentModule}
                 disabled={submitting}
-                className="flex items-center gap-1.5 px-6 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-accent hover:text-primary transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex items-center justify-center px-6 h-10 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-accent hover:text-primary transition-all disabled:opacity-50 cursor-pointer"
               >
                 {submitting ? "Submitting..." : isLastModule ? "Submit Test" : "Next"}
               </button>
@@ -701,45 +741,10 @@ function SATRunner() {
         </div>
       )}
 
-      {/* Calculator Modal */}
-      {showCalculatorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-outline-variant/40 rounded-2xl p-6 max-w-4xl w-full shark-shadow flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Icon name="calculate" className="text-primary text-[24px]" />
-                <h3 className="text-lg font-bold text-on-surface">Desmos Graphing Calculator</h3>
-              </div>
-              <button
-                onClick={() => setShowCalculatorModal(false)}
-                className="p-1.5 rounded-lg hover:bg-surface-container-low transition-colors text-on-surface-variant cursor-pointer"
-              >
-                <Icon name="close" className="text-[20px]" />
-              </button>
-            </div>
-            <div className="flex-1 rounded-xl overflow-hidden bg-surface-container-low min-h-[500px]">
-              <iframe
-                src="https://www.desmos.com/testing/cb-digital-sat/graphing"
-                className="w-full h-full min-h-[500px] border-0"
-                title="Desmos Graphing Calculator"
-              />
-            </div>
-            <div className="flex justify-end pt-4 border-t border-outline-variant/40 mt-4">
-              <button
-                onClick={() => setShowCalculatorModal(false)}
-                className="px-5 py-2 rounded-xl bg-primary text-on-primary hover:bg-accent hover:text-primary transition-colors font-semibold text-sm cursor-pointer"
-              >
-                Close Calculator
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Reference Sheet Modal */}
       {showReferenceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-outline-variant/40 rounded-2xl p-6 max-w-3xl w-full shark-shadow flex flex-col max-h-[90vh]">
+          <div className="bg-surface border border-outline-variant/40 rounded-2xl p-6 max-w-5xl w-full shark-shadow flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <Icon name="functions" className="text-primary text-[24px]" />
@@ -752,138 +757,227 @@ function SATRunner() {
                 <Icon name="close" className="text-[20px]" />
               </button>
             </div>
+            
             <div className="flex-1 overflow-y-auto pr-2 space-y-6">
               {/* Formula Cards Grid */}
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {/* Circle */}
-                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low">
-                  <h4 className="font-bold text-sm text-on-surface mb-2">Circle</h4>
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <div>
-                      <p>{"Area: \\(A = \\pi r^2\\)"}</p>
-                      <p>{"Circumference: \\(C = 2\\pi r\\)"}</p>
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Circle</h4>
+                    <div className="text-xs text-on-surface-variant space-y-1">
+                      <p>Area: A = πr<sup>2</sup></p>
+                      <p>Circumference: C = 2πr</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full border-2 border-primary/40 flex items-center justify-center relative">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary absolute"></span>
-                      <span className="text-[9px] text-primary absolute right-1 top-4">r</span>
-                      <div className="w-6 h-0.5 bg-primary/40 absolute left-6 top-6"></div>
-                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 100" className="w-12 h-12 fill-none stroke-primary/40 stroke-2">
+                      <circle cx="50" cy="50" r="40" />
+                      <line x1="50" y1="50" x2="90" y2="50" strokeDasharray="2" />
+                      <circle cx="50" cy="50" r="2" className="fill-primary" />
+                      <text x="70" y="45" className="fill-primary text-[10px] font-mono">r</text>
+                    </svg>
                   </div>
                 </div>
 
                 {/* Rectangle */}
-                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low">
-                  <h4 className="font-bold text-sm text-on-surface mb-2">Rectangle</h4>
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <div>
-                      <p>{"Area: \\(A = l w\\)"}</p>
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Rectangle</h4>
+                    <div className="text-xs text-on-surface-variant">
+                      <p>Area: A = lw</p>
                     </div>
-                    <div className="w-16 h-10 border-2 border-primary/40 flex items-center justify-center relative">
-                      <span className="text-[9px] text-primary absolute bottom-0.5">l</span>
-                      <span className="text-[9px] text-primary absolute right-1">w</span>
-                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 70" className="w-16 h-10 fill-none stroke-primary/40 stroke-2">
+                      <rect x="10" y="10" width="80" height="50" />
+                      <text x="50" y="68" className="fill-primary text-[10px] font-mono">l</text>
+                      <text x="94" y="38" className="fill-primary text-[10px] font-mono">w</text>
+                    </svg>
                   </div>
                 </div>
 
                 {/* Triangle */}
-                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low">
-                  <h4 className="font-bold text-sm text-on-surface mb-2">Triangle</h4>
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <div>
-                      <p>{"Area: \\(A = \\frac{1}{2} b h\\)"}</p>
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Triangle</h4>
+                    <div className="text-xs text-on-surface-variant">
+                      <p>Area: A = <MathFraction num="1" den="2" />bh</p>
                     </div>
-                    <div className="w-14 h-12 relative">
-                      <svg viewBox="0 0 100 100" className="w-full h-full fill-none stroke-primary/40 stroke-2">
-                        <polygon points="50,10 10,90 90,90" />
-                        <line x1="50" y1="10" x2="50" y2="90" strokeDasharray="3" />
-                      </svg>
-                      <span className="text-[9px] text-primary absolute left-10 bottom-0.5">b</span>
-                      <span className="text-[9px] text-primary absolute left-[54px] top-6">h</span>
-                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 80" className="w-14 h-11 fill-none stroke-primary/40 stroke-2">
+                      <polygon points="50,10 10,70 90,70" />
+                      <line x1="50" y1="10" x2="50" y2="70" strokeDasharray="3" />
+                      <text x="50" y="79" className="fill-primary text-[10px] font-mono">b</text>
+                      <text x="54" y="45" className="fill-primary text-[10px] font-mono">h</text>
+                    </svg>
                   </div>
                 </div>
 
                 {/* Right Triangle */}
-                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low">
-                  <h4 className="font-bold text-sm text-on-surface mb-2">Right Triangle</h4>
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <div>
-                      <p>Pythagorean Theorem:</p>
-                      <p className="font-bold">{"\\(c^2 = a^2 + b^2\\)"}</p>
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Right Triangle</h4>
+                    <div className="text-xs text-on-surface-variant space-y-1">
+                      <p className="font-semibold">Pythagorean Theorem:</p>
+                      <p>c<sup>2</sup> = a<sup>2</sup> + b<sup>2</sup></p>
                     </div>
-                    <div className="w-14 h-12 relative">
-                      <svg viewBox="0 0 100 100" className="w-full h-full fill-none stroke-primary/40 stroke-2">
-                        <polygon points="10,10 10,90 90,90" />
-                        <rect x="10" y="80" width="10" height="10" />
-                      </svg>
-                      <span className="text-[9px] text-primary absolute left-[45px] top-[40px]">c</span>
-                      <span className="text-[9px] text-primary absolute left-2 top-[40px]">a</span>
-                      <span className="text-[9px] text-primary absolute left-[45px] bottom-0.5">b</span>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 80" className="w-14 h-11 fill-none stroke-primary/40 stroke-2">
+                      <polygon points="20,10 20,70 80,70" />
+                      <rect x="20" y="62" width="8" height="8" />
+                      <text x="12" y="45" className="fill-primary text-[10px] font-mono">a</text>
+                      <text x="50" y="79" className="fill-primary text-[10px] font-mono">b</text>
+                      <text x="54" y="40" className="fill-primary text-[10px] font-mono">c</text>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Special Right Triangles */}
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between md:col-span-2">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Special Right Triangles</h4>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 200 90" className="w-full max-w-[280px] h-16 fill-none stroke-primary/40 stroke-2">
+                      {/* 30-60-90 */}
+                      <polygon points="20,10 20,80 70,80" />
+                      <rect x="20" y="72" width="8" height="8" />
+                      <text x="10" y="50" className="fill-primary text-[10px] font-mono">x</text>
+                      <text x="40" y="89" className="fill-primary text-[10px] font-mono">x√3</text>
+                      <text x="50" y="45" className="fill-primary text-[10px] font-mono">2x</text>
+                      <text x="28" y="77" className="fill-primary text-[8px]">60°</text>
+                      <text x="22" y="24" className="fill-primary text-[8px]">30°</text>
+
+                      {/* 45-45-90 */}
+                      <polygon points="120,20 120,80 180,80" />
+                      <rect x="120" y="72" width="8" height="8" />
+                      <text x="110" y="55" className="fill-primary text-[10px] font-mono">s</text>
+                      <text x="145" y="89" className="fill-primary text-[10px] font-mono">s</text>
+                      <text x="155" y="48" className="fill-primary text-[10px] font-mono">s√2</text>
+                      <text x="128" y="77" className="fill-primary text-[8px]">45°</text>
+                      <text x="122" y="34" className="fill-primary text-[8px]">45°</text>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Rectangular Solid */}
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Rectangular Solid</h4>
+                    <div className="text-xs text-on-surface-variant">
+                      <p>Volume: V = lwh</p>
                     </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 80" className="w-16 h-12 fill-none stroke-primary/40 stroke-2">
+                      <rect x="10" y="30" width="55" height="35" />
+                      <polygon points="10,30 25,15 80,15 65,30" />
+                      <polygon points="65,30 80,15 80,50 65,65" />
+                      <line x1="10" y1="65" x2="25" y2="50" strokeDasharray="2" />
+                      <line x1="25" y1="50" x2="80" y2="50" strokeDasharray="2" />
+                      <line x1="25" y1="50" x2="25" y2="15" strokeDasharray="2" />
+                      <text x="35" y="75" className="fill-primary text-[10px] font-mono">l</text>
+                      <text x="74" y="60" className="fill-primary text-[10px] font-mono">w</text>
+                      <text x="85" y="35" className="fill-primary text-[10px] font-mono">h</text>
+                    </svg>
                   </div>
                 </div>
 
                 {/* Cylinder */}
-                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low">
-                  <h4 className="font-bold text-sm text-on-surface mb-2">Cylinder</h4>
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <div>
-                      <p>{"Volume: \\(V = \\pi r^2 h\\)"}</p>
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Cylinder</h4>
+                    <div className="text-xs text-on-surface-variant">
+                      <p>Volume: V = πr<sup>2</sup>h</p>
                     </div>
-                    <div className="w-14 h-12 relative">
-                      <svg viewBox="0 0 100 100" className="w-full h-full fill-none stroke-primary/40 stroke-2">
-                        <ellipse cx="50" cy="20" rx="30" ry="10" />
-                        <ellipse cx="50" cy="80" rx="30" ry="10" />
-                        <line x1="20" y1="20" x2="20" y2="80" />
-                        <line x1="80" y1="20" x2="80" y2="80" />
-                        <line x1="50" y1="20" x2="80" y2="20" strokeDasharray="2" />
-                      </svg>
-                      <span className="text-[9px] text-primary absolute right-6 top-1">r</span>
-                      <span className="text-[9px] text-primary absolute right-1 top-[40px]">h</span>
-                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 90" className="w-14 h-12 fill-none stroke-primary/40 stroke-2">
+                      <ellipse cx="50" cy="20" rx="30" ry="10" />
+                      <ellipse cx="50" cy="70" rx="30" ry="10" />
+                      <line x1="20" y1="20" x2="20" y2="70" />
+                      <line x1="80" y1="20" x2="80" y2="70" />
+                      <line x1="50" y1="20" x2="80" y2="20" strokeDasharray="2" />
+                      <text x="65" y="16" className="fill-primary text-[10px] font-mono">r</text>
+                      <text x="86" y="50" className="fill-primary text-[10px] font-mono">h</text>
+                    </svg>
                   </div>
                 </div>
 
                 {/* Sphere */}
-                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low">
-                  <h4 className="font-bold text-sm text-on-surface mb-2">Sphere</h4>
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <div>
-                      <p>{"Volume: \\(V = \\frac{4}{3} \\pi r^3\\)"}</p>
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Sphere</h4>
+                    <div className="text-xs text-on-surface-variant">
+                      <p>Volume: V = <MathFraction num="4" den="3" />πr<sup>3</sup></p>
                     </div>
-                    <div className="w-12 h-12 relative">
-                      <svg viewBox="0 0 100 100" className="w-full h-full fill-none stroke-primary/40 stroke-2">
-                        <circle cx="50" cy="50" r="40" />
-                        <ellipse cx="50" cy="50" rx="40" ry="12" strokeDasharray="3" />
-                        <line x1="50" y1="50" x2="90" y2="50" strokeDasharray="2" />
-                      </svg>
-                      <span className="text-[9px] text-primary absolute right-4 top-4">r</span>
-                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 100" className="w-12 h-12 fill-none stroke-primary/40 stroke-2">
+                      <circle cx="50" cy="50" r="40" />
+                      <ellipse cx="50" cy="50" rx="40" ry="12" strokeDasharray="3" />
+                      <line x1="50" y1="50" x2="90" y2="50" strokeDasharray="2" />
+                      <text x="70" y="45" className="fill-primary text-[10px] font-mono">r</text>
+                    </svg>
                   </div>
                 </div>
 
                 {/* Cone */}
-                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low">
-                  <h4 className="font-bold text-sm text-on-surface mb-2">Cone</h4>
-                  <div className="flex justify-between items-center text-xs text-on-surface-variant">
-                    <div>
-                      <p>{"Volume: \\(V = \\frac{1}{3} \\pi r^2 h\\)"}</p>
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Cone</h4>
+                    <div className="text-xs text-on-surface-variant">
+                      <p>Volume: V = <MathFraction num="1" den="3" />πr<sup>2</sup>h</p>
                     </div>
-                    <div className="w-14 h-12 relative">
-                      <svg viewBox="0 0 100 100" className="w-full h-full fill-none stroke-primary/40 stroke-2">
-                        <ellipse cx="50" cy="80" rx="30" ry="10" />
-                        <line x1="50" y1="10" x2="20" y2="80" />
-                        <line x1="50" y1="10" x2="80" y2="80" />
-                        <line x1="50" y1="10" x2="50" y2="80" strokeDasharray="3" />
-                        <line x1="50" y1="80" x2="80" y2="80" strokeDasharray="2" />
-                      </svg>
-                      <span className="text-[9px] text-primary absolute right-6 bottom-2">r</span>
-                      <span className="text-[9px] text-primary absolute left-9 top-8">h</span>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 90" className="w-14 h-12 fill-none stroke-primary/40 stroke-2">
+                      <ellipse cx="50" cy="80" rx="30" ry="10" />
+                      <line x1="50" y1="10" x2="20" y2="80" />
+                      <line x1="50" y1="10" x2="80" y2="80" />
+                      <line x1="50" y1="10" x2="50" y2="80" strokeDasharray="3" />
+                      <line x1="50" y1="80" x2="80" y2="80" strokeDasharray="2" />
+                      <text x="65" y="89" className="fill-primary text-[10px] font-mono">r</text>
+                      <text x="42" y="45" className="fill-primary text-[10px] font-mono">h</text>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Pyramid */}
+                <div className="p-4 rounded-xl border border-outline-variant/40 bg-surface-container-low flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-on-surface mb-2">Pyramid</h4>
+                    <div className="text-xs text-on-surface-variant">
+                      <p>Volume: V = <MathFraction num="1" den="3" />lwh</p>
                     </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <svg viewBox="0 0 100 80" className="w-14 h-12 fill-none stroke-primary/40 stroke-2">
+                      <polygon points="50,10 15,65 65,65" />
+                      <polygon points="50,10 65,65 85,50 50,10" />
+                      <line x1="15" y1="65" x2="35" y2="50" strokeDasharray="2" />
+                      <line x1="35" y1="50" x2="85" y2="50" strokeDasharray="2" />
+                      <line x1="50" y1="10" x2="35" y2="50" strokeDasharray="2" />
+                      <line x1="50" y1="10" x2="50" y2="58" strokeDasharray="2" />
+                      <text x="38" y="74" className="fill-primary text-[10px] font-mono">l</text>
+                      <text x="76" y="60" className="fill-primary text-[10px] font-mono">w</text>
+                      <text x="54" y="35" className="fill-primary text-[10px] font-mono">h</text>
+                    </svg>
                   </div>
                 </div>
               </div>
+
+              {/* Bottom Instructions Panel */}
+              <div className="border-t border-outline-variant/40 pt-4 mt-6 text-sm text-on-surface-variant space-y-2 font-medium">
+                <p>• The number of degrees of arc in a circle is 360.</p>
+                <p>• The number of radians of arc in a circle is 2π.</p>
+                <p>• The sum of the measures in degrees of the angles of a triangle is 180.</p>
+              </div>
             </div>
+            
             <div className="flex justify-end pt-4 border-t border-outline-variant/40 mt-4">
               <button
                 onClick={() => setShowReferenceModal(false)}

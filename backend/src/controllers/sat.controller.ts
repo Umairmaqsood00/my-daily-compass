@@ -412,7 +412,7 @@ export const getMySATAttempts = async (req: AuthRequest, res: Response) => {
 // --- Admin: list all SAT tests ---
 export const getAllSATTestsAdmin = async (req: Request, res: Response) => {
   try {
-    const tests = await SATTest.find().sort({ year: -1, testNumber: 1 });
+    const tests = await SATTest.find().populate("modules.questions").sort({ year: -1, testNumber: 1 });
     res.status(200).json({ success: true, tests });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
@@ -422,13 +422,17 @@ export const getAllSATTestsAdmin = async (req: Request, res: Response) => {
 // --- Admin: update SAT test active status / access level ---
 export const updateSATTestAdmin = async (req: Request, res: Response) => {
   try {
-    const { title, year, testNumber, isActive, accessLevel } = req.body;
+    const { title, year, testNumber, isActive, accessLevel, pdfUrl, explanationPdfUrl, rwScoreMapping, mathScoreMapping } = req.body;
     const update: any = {};
     if (title !== undefined) update.title = title;
     if (year !== undefined) update.year = year;
     if (testNumber !== undefined) update.testNumber = testNumber;
     if (isActive !== undefined) update.isActive = isActive;
     if (accessLevel !== undefined) update.accessLevel = accessLevel;
+    if (pdfUrl !== undefined) update.pdfUrl = pdfUrl;
+    if (explanationPdfUrl !== undefined) update.explanationPdfUrl = explanationPdfUrl;
+    if (rwScoreMapping !== undefined) update.rwScoreMapping = rwScoreMapping;
+    if (mathScoreMapping !== undefined) update.mathScoreMapping = mathScoreMapping;
 
     const test = await SATTest.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!test) return res.status(404).json({ success: false, error: "Test not found" });

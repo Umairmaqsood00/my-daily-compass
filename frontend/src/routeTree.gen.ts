@@ -28,6 +28,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminUploadsRouteImport } from './routes/admin/uploads'
 import { Route as AdminTestsRouteImport } from './routes/admin/tests'
+import { Route as AdminSuccessStoriesRouteImport } from './routes/admin/success-stories'
 import { Route as AdminQuestionsRouteImport } from './routes/admin/questions'
 import { Route as AdminContactRequestsRouteImport } from './routes/admin/contact-requests'
 import { Route as DashboardSatRunnerAttemptIdRouteImport } from './routes/dashboard/sat-runner.$attemptId'
@@ -129,6 +130,11 @@ const AdminTestsRoute = AdminTestsRouteImport.update({
   path: '/admin/tests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSuccessStoriesRoute = AdminSuccessStoriesRouteImport.update({
+  id: '/admin/success-stories',
+  path: '/admin/success-stories',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
   id: '/admin/questions',
   path: '/admin/questions',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/success-stories': typeof SuccessStoriesRoute
   '/admin/contact-requests': typeof AdminContactRequestsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
   '/admin/uploads': typeof AdminUploadsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/success-stories': typeof SuccessStoriesRoute
   '/admin/contact-requests': typeof AdminContactRequestsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
   '/admin/uploads': typeof AdminUploadsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/success-stories': typeof SuccessStoriesRoute
   '/admin/contact-requests': typeof AdminContactRequestsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
   '/admin/uploads': typeof AdminUploadsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/success-stories'
     | '/admin/contact-requests'
     | '/admin/questions'
+    | '/admin/success-stories'
     | '/admin/tests'
     | '/admin/uploads'
     | '/admin/users'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/success-stories'
     | '/admin/contact-requests'
     | '/admin/questions'
+    | '/admin/success-stories'
     | '/admin/tests'
     | '/admin/uploads'
     | '/admin/users'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/success-stories'
     | '/admin/contact-requests'
     | '/admin/questions'
+    | '/admin/success-stories'
     | '/admin/tests'
     | '/admin/uploads'
     | '/admin/users'
@@ -325,6 +337,7 @@ export interface RootRouteChildren {
   SuccessStoriesRoute: typeof SuccessStoriesRoute
   AdminContactRequestsRoute: typeof AdminContactRequestsRoute
   AdminQuestionsRoute: typeof AdminQuestionsRoute
+  AdminSuccessStoriesRoute: typeof AdminSuccessStoriesRoute
   AdminTestsRoute: typeof AdminTestsRoute
   AdminUploadsRoute: typeof AdminUploadsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/success-stories': {
+      id: '/admin/success-stories'
+      path: '/admin/success-stories'
+      fullPath: '/admin/success-stories'
+      preLoaderRoute: typeof AdminSuccessStoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/questions': {
       id: '/admin/questions'
       path: '/admin/questions'
@@ -542,6 +562,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuccessStoriesRoute: SuccessStoriesRoute,
   AdminContactRequestsRoute: AdminContactRequestsRoute,
   AdminQuestionsRoute: AdminQuestionsRoute,
+  AdminSuccessStoriesRoute: AdminSuccessStoriesRoute,
   AdminTestsRoute: AdminTestsRoute,
   AdminUploadsRoute: AdminUploadsRoute,
   AdminUsersRoute: AdminUsersRoute,

@@ -11,7 +11,7 @@ const stripe = new Stripe(env.stripeSecretKey || "sk_test_dummy", {
 
 export const createCheckoutSession = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const { planId, region } = req.body;
 
     let user: any = null;

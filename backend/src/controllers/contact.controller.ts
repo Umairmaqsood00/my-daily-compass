@@ -6,7 +6,7 @@ import { env } from "../config/env";
 
 export const submitInquiry = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const { firstName, lastName, email, category, message } = req.body;
 
     if (!env.isDatabaseConfigured && env.allowMockAuth) {

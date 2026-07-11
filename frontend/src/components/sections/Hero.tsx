@@ -87,7 +87,6 @@ export function Hero() {
         setIsLoading(false);
       });
   }, []);
-  }, []);
 
   return (
     <section id="top" className="relative pt-4 pb-28 md:pt-8 md:pb-40 overflow-hidden bg-background">

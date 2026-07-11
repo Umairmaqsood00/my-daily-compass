@@ -113,11 +113,19 @@ function SATRunner() {
         setPhase("MODULE");
         const mod = testData.modules[attempt.currentModuleIndex];
         const modAttempt = attempt.moduleAttempts[attempt.currentModuleIndex];
-        if (mod && modAttempt?.startedAt) {
-          const elapsed = Math.floor(
-            (Date.now() - new Date(modAttempt.startedAt).getTime()) / 1000
-          );
-          setTimeLeft(Math.max(0, mod.timeLimitMinutes * 60 - elapsed));
+        if (mod) {
+          if (modAttempt?.startedAt) {
+            const elapsed = Math.floor(
+              (Date.now() - new Date(modAttempt.startedAt).getTime()) / 1000
+            );
+            if (elapsed < 0 || elapsed > mod.timeLimitMinutes * 60 || elapsed < 5) {
+              setTimeLeft(mod.timeLimitMinutes * 60);
+            } else {
+              setTimeLeft(mod.timeLimitMinutes * 60 - elapsed);
+            }
+          } else {
+            setTimeLeft(mod.timeLimitMinutes * 60);
+          }
         }
       } else if (attempt.status === "COMPLETED") {
         setPhase("FINISHED");

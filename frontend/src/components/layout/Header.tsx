@@ -28,7 +28,6 @@ export function Header() {
     { to: "/", hash: "services", label: "Services" },
     { to: "/consulting", hash: undefined, label: "Consulting" },
     { to: "/booking", hash: undefined, label: "Book Session" },
-    { to: "/success-stories", hash: undefined, label: "Success Stories" },
     { to: "/subscriptions", hash: undefined, label: "Pricing" },
     { to: "/contact", hash: undefined, label: "Contact" },
     ...(user?.role === "STUDENT" ? [{ to: "/dashboard/", hash: undefined, label: "Dashboard" }] : []),

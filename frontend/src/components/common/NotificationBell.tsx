@@ -60,6 +60,17 @@ export function NotificationBell() {
     },
   });
 
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.delete("/api/notifications/clear-all");
+      if (!res.success) throw new Error(res.error);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
   const handleMarkRead = (notif: Notification) => {
     if (!notif.isRead) {
       markReadMutation.mutate(notif._id);
@@ -72,6 +83,10 @@ export function NotificationBell() {
       navigate({ to: isAdmin ? "/admin/essays" : "/dashboard/essays" as any });
     } else if (notif.type === "CONSULTING_SUBMITTED") {
       navigate({ to: isAdmin ? "/admin/consulting" : "/consulting" as any });
+    } else if (notif.type === "CONTACT_INQUIRY") {
+      navigate({ to: isAdmin ? "/admin/contact-requests" : "/contact" as any });
+    } else if (notif.type === "ADMIN_REPLY") {
+      navigate({ to: "/contact" as any });
     }
   };
 
@@ -92,16 +107,30 @@ export function NotificationBell() {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest py-2 shadow-xl z-50">
-          <div className="flex items-center justify-between border-b border-outline-variant/40 px-4 pb-2 pt-1">
-            <h3 className="font-display text-lg font-bold text-on-surface">Notifications</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={() => markAllReadMutation.mutate()}
-                className="text-[11px] font-bold uppercase tracking-[0.05em] text-primary hover:text-accent transition-colors"
-              >
-                Mark all read
-              </button>
-            )}
+          <div className="flex items-center justify-between border-b border-outline-variant/40 px-4 pb-2 pt-1 gap-2">
+            <h3 className="font-display text-base font-bold text-on-surface">Notifications</h3>
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={() => markAllReadMutation.mutate()}
+                  className="text-[10px] font-bold uppercase tracking-[0.05em] text-primary hover:text-accent transition-colors cursor-pointer"
+                >
+                  Mark read
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (confirm("Are you sure you want to clear all notifications?")) {
+                      clearAllMutation.mutate();
+                    }
+                  }}
+                  className="text-[10px] font-bold uppercase tracking-[0.05em] text-error hover:text-red-600 transition-colors cursor-pointer"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden">

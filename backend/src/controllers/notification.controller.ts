@@ -57,3 +57,19 @@ export const markAllAsRead = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ success: false, error: "Server Error" });
   }
 };
+
+export const clearAllNotifications = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    await Notification.deleteMany({ user: userId });
+
+    return res.status(200).json({ success: true, message: "All notifications cleared" });
+  } catch (error: any) {
+    console.error("Clear All Notifications Error:", error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};

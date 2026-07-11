@@ -6,6 +6,7 @@ import { Link } from "@tanstack/react-router";
 import { api, resolveImageUrl } from "../../services/api";
 
 export function Hero() {
+  const [isLoading, setIsLoading] = useState(true);
   const [feature, setFeature] = useState({
     studentName: "Admitted Student",
     university: "Stanford University '28",
@@ -20,7 +21,8 @@ export function Hero() {
       if (res.success && res.feature) {
         setFeature(res.feature);
       }
-    });
+      setIsLoading(false);
+    }).catch(() => setIsLoading(false));
   }, []);
 
   const resolveHeroImageUrl = (url: string) => {
@@ -95,12 +97,13 @@ export function Hero() {
 
         {/* Right Side: Multi-layered Creative Collage */}
         <div className="lg:col-span-5 relative mt-8 lg:mt-0">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mx-auto max-w-[420px]"
-          >
+          {!isLoading && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="relative mx-auto max-w-[420px]"
+            >
             {/* Background Luxury Frame Layer */}
             <div className="absolute -inset-4 rounded-2xl border border-accent/20 -z-10" />
             <div className="absolute -inset-2 rounded-2xl border border-accent/40 -z-10 translate-x-1.5 translate-y-1.5" />
@@ -158,6 +161,7 @@ export function Hero() {
               <Icon name="star" className="text-[12px] fill-accent" /> {feature.tag}
             </div>
           </motion.div>
+          )}
         </div>
       </div>
     </section>

@@ -49,8 +49,15 @@ const CollageSkeleton = () => (
 );
 
 export function Hero() {
-  const [feature, setFeature] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [feature, setFeature] = useState<any>({
+    studentName: "Admitted Student",
+    university: "Stanford University '28",
+    score: "1580",
+    improvement: "+210 Improvement",
+    tag: "Top 1% Worldwide",
+    imageUrl: ""
+  });
 
   useEffect(() => {
     api.get("/api/success-stories/featured")
@@ -63,22 +70,23 @@ export function Hero() {
           img.src = imgUrl;
           img.onload = () => {
             setFeature(res.feature);
-            setLoading(false);
+            setIsLoading(false);
           };
           img.onerror = () => {
             setFeature(res.feature);
-            setLoading(false);
+            setIsLoading(false);
           };
         } else {
           setFeature(DEFAULT_FEATURE);
-          setLoading(false);
+          setIsLoading(false);
         }
       })
       .catch((err) => {
         console.error("Error fetching featured success story:", err);
         setFeature(DEFAULT_FEATURE);
-        setLoading(false);
+        setIsLoading(false);
       });
+  }, []);
   }, []);
 
   return (
@@ -149,9 +157,32 @@ export function Hero() {
 
         {/* Right Side: Multi-layered Creative Collage */}
         <div className="lg:col-span-5 relative mt-8 lg:mt-0">
-          {loading || !feature ? (
+          {isLoading || !feature ? (
             <CollageSkeleton />
           ) : (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="relative mx-auto max-w-[420px]"
+            >
+            {/* Background Luxury Frame Layer */}
+            <div className="absolute -inset-4 rounded-2xl border border-accent/20 -z-10" />
+            <div className="absolute -inset-2 rounded-2xl border border-accent/40 -z-10 translate-x-1.5 translate-y-1.5" />
+            <div className="absolute -right-6 -bottom-6 w-32 h-32 border-r border-b border-accent/60 -z-10" />
+            <div className="absolute -left-6 -top-6 w-32 h-32 border-l border-t border-accent/60 -z-10" />
+
+            {/* Glowing Accent */}
+            <div className="absolute -inset-6 rounded-2xl bg-linear-to-br from-accent/20 via-transparent to-primary/30 blur-2xl -z-10" />
+
+            {/* Main Student Portrait */}
+            <img
+              src={resolveHeroImageUrl(feature.imageUrl)}
+              alt={feature.studentName}
+              className="w-full h-auto object-cover rounded-xl shark-shadow border border-outline-variant/60"
+            />
+
+            {/* Floating Badge 1: Stanford Acceptance */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -215,6 +246,28 @@ export function Hero() {
                 <Icon name="star" className="text-[12px] fill-accent" /> {feature.tag}
               </div>
             </motion.div>
+            {/* Floating Badge 2: SAT Score card */}
+            <motion.div 
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+              className="absolute -right-8 bottom-12 bg-primary text-on-primary p-4 rounded-xl shark-shadow max-w-[190px]"
+              whileHover={{ y: -4 }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-display text-[26px] font-extrabold text-accent leading-none">{feature.score}</span>
+                <div>
+                  <h4 className="font-body text-[11px] font-bold uppercase tracking-[0.05em] leading-tight">SAT Score</h4>
+                  <p className="font-body text-[10px] text-on-primary/70 font-medium">{feature.improvement}</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Bottom mini credential badge */}
+            <div className="absolute bottom-4 left-4 bg-surface/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-outline-variant/60 text-[10px] font-bold uppercase tracking-[0.08em] text-accent flex items-center gap-1">
+              <Icon name="star" className="text-[12px] fill-accent" /> {feature.tag}
+            </div>
+          </motion.div>
           )}
         </div>
       </div>

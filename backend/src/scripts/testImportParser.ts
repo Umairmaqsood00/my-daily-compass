@@ -1,14 +1,10 @@
 import "../config/env";
-import mongoose from "mongoose";
 import fs from "fs";
 import path from "path";
-import { connectDB } from "../config/db";
-import QuestionCategory from "../models/QuestionCategory";
-import Question from "../models/Question";
-import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
+import { PDFParse } from "pdf-parse";
 
-// Define interface for parsed items
+// Interfaces
 interface ParsedQuestion {
   questionNumber: number;
   difficulty: "EASY" | "MEDIUM" | "HARD";
@@ -22,7 +18,7 @@ interface ParsedSolution {
   explanation: string;
 }
 
-// Map each pair of files to a specific category and tags for folder 1 (original)
+// Map each pair of files to a specific category and tags for folder 1
 const ORIGINAL_FILE_MAP = [
   {
     questions: "01_Overall_Structure_Questions.pdf",
@@ -138,14 +134,6 @@ function normalizeText(text: string): string {
     .replace(/\u00A0/g, " ");
 }
 
-function cleanMarkdownFormatting(str: string): string {
-  if (!str) return str;
-  return str
-    .replace(/\*\*/g, "") // strip all bold markers
-    .replace(/--\s*\d+\s*of\s*\d+\s*--/gi, "") // strip inline page numbers
-    .trim();
-}
-
 function preprocessQuestionText(text: string): string {
   const lines = text.split("\n").map(l => l.trim());
   const processed: string[] = [];
@@ -231,7 +219,7 @@ function parseOptionsFromLine(line: string, currentQ: ParsedQuestion): boolean {
   return true;
 }
 
-// Universal parser for Questions text
+// Robust, universal Question parser
 function parseQuestions(text: string): ParsedQuestion[] {
   const normalized = normalizeText(text);
   const lines = normalized.split("\n").map(l => l.trim());
@@ -245,15 +233,14 @@ function parseQuestions(text: string): ParsedQuestion[] {
     if (isIgnoredPracticeLine(line)) continue;
 
     // Detect question start:
-    // Format A (DOCX): Question 1    🟢 Easy    [Multiple Choice]
-    // Format B (MD): **1.** 🟢 Easy
-    // Format C (PDF): Q1., Q1. ● EASY, Q1. DIFFICULTY: EASY, 1 Easy
+    // MD formatting: **1.** 🟢 Easy or **Question 1**
     const mdMatch = line.match(/^\*\*Q?(\d+)\.\s*(?:\*\*|\s)*(?:🟢|🟡|🔴)?\s*\[?(Easy|Medium|Hard)\]?/i) || 
                     line.match(/^\*\*(\d+)\.\*\*\s*(?:🟢|🟡|🔴)?\s*(Easy|Medium|Hard)/i) || 
                     line.match(/^\*\*(\d+)\.\*\*\s*(Easy|Medium|Hard)/i) || 
                     line.match(/^\*\*(\d+)\.\s*(?:🟢|🟡|🔴)?\s*(Easy|Medium|Hard)/i) ||
                     line.match(/^##\s*Question\s+(\d+)\b/i);
     
+    // Normal text formatting: Question 1    🟢 Easy    [Multiple Choice] or Q1. or 1 Easy
     const textMatch = line.match(/^Question\s+(\d+)\s*(?:🟢|🟡|🔴)?\s*\[?(Easy|Medium|Hard)\]?/i) || 
                       line.match(/^Q(\d+)\b(?:\.|\s)*(?:🟢|🟡|🔴)?\s*\[?(Easy|Medium|Hard)\]?/i) ||
                       line.match(/^Q(\d+)\b/i) ||
@@ -295,13 +282,7 @@ function parseQuestions(text: string): ParsedQuestion[] {
         text: "",
         options: []
       };
-      const matchedPrefix = mdMatch ? mdMatch[0] : textMatch![0];
-      const remainingText = line.substring(matchedPrefix.length).trim();
       textLines = [];
-      if (remainingText) {
-        const cleanRemaining = remainingText.replace(/^[:\-\s\.]\s*/, "");
-        textLines.push(cleanRemaining);
-      }
       continue;
     }
 
@@ -345,7 +326,7 @@ function parseQuestions(text: string): ParsedQuestion[] {
   return questions;
 }
 
-// Universal parser for Solutions text
+// Robust, universal Solutions parser
 function parseSolutions(text: string): ParsedSolution[] {
   const normalized = normalizeText(text);
   const lines = normalized.split("\n").map(l => l.trim());
@@ -494,7 +475,7 @@ function cleanCategoryName(qFile: string): string {
     .replace(/_Questions_v2$/i, "")
     .replace(/_Questions_Only$/i, "");
     
-  base = base.replace(/^DSAT_\d+_/i, "").replace(/^DSAT_Topic\d+_/i, "").replace(/^DSAT_/i, "");
+  base = base.replace(/^DSAT_\d+_/i, "").replace(/^DSAT_Topic\d+_/i, "").replace(/^DSAT_/i);
   base = base.replace(/_/g, " ").trim();
   
   const mapping: { [key: string]: string } = {
@@ -529,173 +510,82 @@ function cleanCategoryName(qFile: string): string {
   return `SAT Practice: ${base}`;
 }
 
-async function main() {
-  const connected = await connectDB();
-  if (!connected) throw new Error("Database connection failed");
-
-  console.log("Connected to MongoDB.");
-
-  // Delete previously imported practice questions
-  const deleteResult = await Question.deleteMany({ tags: "practice-question" });
-  console.log(`Cleared ${deleteResult.deletedCount} old practice questions.`);
-
-  const practicequestionsDir = path.resolve(__dirname, "../../../practicequestions");
-  const practicequestions2Dir = path.resolve(__dirname, "../../../practicequestions2");
-
-  // Compile all items to import
-  const itemsToImport: {
-    qPath: string;
-    sPath: string;
-    category: string;
-    tag: string;
-    type: "pdf" | "docx" | "md";
-    section: "READING_WRITING" | "MATH";
-  }[] = [];
-
-  // 1. ORIGINAL FOLDER 1 (Reading & Writing)
+async function run() {
+  console.log("=== DRY RUN PARSING PRACTICE QUESTIONS ===");
+  
+  const practiceDir = path.resolve(__dirname, "../../../practicequestions");
+  const practiceDir2 = path.resolve(__dirname, "../../../practicequestions2");
+  
+  let totalErrors = 0;
+  
+  // 1. Process folder 1 (original)
+  console.log("\n--- FOLDER 1: practicequestions ---");
   for (const item of ORIGINAL_FILE_MAP) {
-    itemsToImport.push({
-      qPath: path.join(practicequestionsDir, item.questions),
-      sPath: path.join(practicequestionsDir, item.solutions),
-      category: item.category,
-      tag: item.tag,
-      type: item.type as any,
-      section: "READING_WRITING"
-    });
-  }
-
-  // 2. NEW FOLDER 2 (Math)
-  if (fs.existsSync(practicequestions2Dir)) {
-    const files2 = fs.readdirSync(practicequestions2Dir).filter(f => !f.includes("(1)"));
-    const questionFiles = files2.filter(f => f.toLowerCase().includes("question") || f.toLowerCase().includes("questions_only"));
+    const qPath = path.join(practiceDir, item.questions);
+    const sPath = path.join(practiceDir, item.solutions);
     
-    for (const qFile of questionFiles) {
-      const sFile = getSolutionsFile(qFile);
-      if (!sFile) continue;
-      
-      const qPath = path.join(practicequestions2Dir, qFile);
-      const sPath = path.join(practicequestions2Dir, sFile);
-      
-      if (!fs.existsSync(qPath) || !fs.existsSync(sPath)) continue;
-      
-      const categoryName = cleanCategoryName(qFile);
-      const tag = categoryName.replace("SAT Practice: ", "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      const ext = path.extname(qFile).substring(1) as any;
-      
-      itemsToImport.push({
-        qPath,
-        sPath,
-        category: categoryName,
-        tag,
-        type: ext,
-        section: "MATH"
-      });
+    if (!fs.existsSync(qPath) || !fs.existsSync(sPath)) {
+      console.error(`  ERROR: Files not found for ${item.category}`);
+      totalErrors++;
+      continue;
+    }
+    
+    const qText = await extractText(qPath, item.type as any);
+    const sText = await extractText(sPath, item.type as any);
+    
+    const parsedQ = parseQuestions(qText);
+    const parsedS = parseSolutions(sText);
+    
+    if (parsedQ.length !== parsedS.length) {
+      console.warn(`  WARNING: count mismatch for ${item.category}: Q=${parsedQ.length}, S=${parsedS.length}`);
+      totalErrors++;
+    } else {
+      console.log(`  SUCCESS: ${item.category} -> Parsed ${parsedQ.length} Q/S pairs.`);
     }
   }
-
-  console.log(`Prepared ${itemsToImport.length} categories/topics for import.`);
-
-  for (const item of itemsToImport) {
-    console.log(`\n-----------------------------------------`);
-    console.log(`Processing category: "${item.category}" (${item.section})`);
-    console.log(`-----------------------------------------`);
-
-    // 1. Ensure Category exists
-    const categoryDoc = await QuestionCategory.findOneAndUpdate(
-      { name: item.category },
-      {
-        $set: {
-          name: item.category,
-          section: item.section,
-          description: `Topic-specific practice for ${item.category.replace("SAT Practice: ", "")}`
-        }
-      },
-      { upsert: true, new: true }
-    );
-
-    // 2. Extract texts
-    console.log(`Extracting text from questions file...`);
-    const qText = await extractText(item.qPath, item.type);
-    console.log(`Extracting text from solutions file...`);
-    const sText = await extractText(item.sPath, item.type);
-
-    // 3. Parse questions & solutions
-    const parsedQuestions = parseQuestions(qText);
-    const parsedSolutions = parseSolutions(sText);
-
-    console.log(`Parsed ${parsedQuestions.length} questions.`);
-    console.log(`Parsed ${parsedSolutions.length} solutions.`);
-
-    // 4. Map questions and solutions together
-    const solMap = new Map<number, ParsedSolution>();
-    for (const sol of parsedSolutions) {
-      solMap.set(sol.questionNumber, sol);
+  
+  // 2. Process folder 2 (new)
+  console.log("\n--- FOLDER 2: practicequestions2 ---");
+  const files2 = fs.readdirSync(practiceDir2).filter(f => !f.includes("(1)"));
+  const questionFiles = files2.filter(f => f.toLowerCase().includes("question") || f.toLowerCase().includes("questions_only"));
+  
+  for (const qFile of questionFiles) {
+    const sFile = getSolutionsFile(qFile);
+    if (!sFile || !fs.existsSync(path.join(practiceDir2, sFile))) {
+      console.warn(`  WARNING: No solution file found for questions file "${qFile}" (expected "${sFile}")`);
+      totalErrors++;
+      continue;
     }
-
-    let successCount = 0;
-
-    for (const q of parsedQuestions) {
-      const sol = solMap.get(q.questionNumber);
-      if (!sol) {
-        console.warn(`  WARNING: No solution found for question #${q.questionNumber} in ${path.basename(item.qPath)}`);
-        continue;
-      }
-
-      const rawExplanation = sol.explanation
-        .replace(/n TRAP ALERT:/gi, "\n\nTRAP ALERT 🪤:")
-        .replace(/n KEY INSIGHT:/gi, "\n\nKEY INSIGHT 💡:")
-        .replace(/n FAST METHOD:/gi, "\n\nFAST METHOD ⚡:")
-        .replace(/TRAP ALERT\b/gi, "\n\nTRAP ALERT 🪤")
-        .replace(/KEY INSIGHT\b/gi, "\n\nKEY INSIGHT 💡")
-        .replace(/FAST METHOD\b/gi, "\n\nFAST METHOD ⚡")
-        .replace(/WHY WRONG:/gi, "\n\nWHY WRONG:")
-        .replace(/WHY EACH OPTION IS WRONG:/gi, "\n\nWHY EACH OPTION IS WRONG:")
-        .replace(/WHY EACH WRONG OPTION IS WRONG:/gi, "\n\nWHY EACH WRONG OPTION IS WRONG:")
-        .replace(/\s+-\s+([A-D])\)/g, "\n• $1)")
-        .replace(/\s+•\s+([A-D])\)/g, "\n• $1)")
-        .replace(/\s+([A-D])\)\s+([A-Z])/g, "\n• $1) $2")
-        .replace(/#+/g, "")
-        .replace(/≡+/g, "")
-        .replace(/\s*\n\s*/g, "\n")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-
-      const cleanText = cleanMarkdownFormatting(preprocessQuestionText(q.text)).replace(/#+/g, "");
-      const cleanOptions = q.options.map(opt => ({
-        label: opt.label,
-        text: cleanMarkdownFormatting(opt.text).replace(/#+/g, "").trim()
-      }));
-      const formattedExplanation = cleanMarkdownFormatting(rawExplanation);
-
-      await Question.create({
-        text: cleanText,
-        options: cleanOptions,
-        correctAnswer: sol.correctAnswer,
-        explanation: formattedExplanation,
-        category: categoryDoc._id,
-        difficulty: q.difficulty,
-        section: item.section,
-        tags: ["practice-question", item.tag],
-        source: "MANUAL",
-        status: "PUBLISHED"
-      });
-
-      successCount++;
+    
+    const qPath = path.join(practiceDir2, qFile);
+    const sPath = path.join(practiceDir2, sFile);
+    
+    const qExt = path.extname(qFile).substring(1) as any;
+    const sExt = path.extname(sFile).substring(1) as any;
+    
+    const qText = await extractText(qPath, qExt);
+    const sText = await extractText(sPath, sExt);
+    
+    const parsedQ = parseQuestions(qText);
+    const parsedS = parseSolutions(sText);
+    
+    const catName = cleanCategoryName(qFile);
+    
+    if (parsedQ.length === 0) {
+      console.error(`  ERROR: 0 questions parsed for file "${qFile}"`);
+      totalErrors++;
+    } else if (parsedS.length === 0) {
+      console.error(`  ERROR: 0 solutions parsed for file "${sFile}"`);
+      totalErrors++;
+    } else if (parsedQ.length !== parsedS.length) {
+      console.warn(`  WARNING: count mismatch for "${catName}" (Q file: ${qFile}, S file: ${sFile}): Q=${parsedQ.length}, S=${parsedS.length}`);
+      totalErrors++;
+    } else {
+      console.log(`  SUCCESS: "${catName}" -> Parsed ${parsedQ.length} Q/S pairs.`);
     }
-
-    console.log(`Successfully imported ${successCount} questions for "${item.category}".`);
   }
-
-  console.log("\n=========================================");
-  console.log("Practice Questions Import Complete!");
-  console.log("=========================================");
+  
+  console.log(`\nDry run completed with ${totalErrors} errors/warnings.`);
 }
 
-main()
-  .catch((e) => {
-    console.error("Practice questions import failed:", e);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await mongoose.disconnect();
-  });
+run().catch(console.error);

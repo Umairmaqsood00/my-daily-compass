@@ -137,7 +137,7 @@ function ConsultingMatcher() {
   const update = (key: string, val: any) => setProfile(p => ({ ...p, [key]: val }));
 
   const availableCountries = useMemo(() => {
-    const countries = new Set(universities.map((u: any) => u.country));
+    const countries = new Set<string>(universities.map((u: any) => u.country as string));
     // Ensure we always have some defaults if DB is empty
     ["USA", "UK", "Canada", "Australia", "China", "India", "Pakistan"].forEach(c => countries.add(c));
     return Array.from(countries).sort();
@@ -167,7 +167,7 @@ function ConsultingMatcher() {
         gpa: profile.oLevel,
         satScore: parseInt(profile.sat) || 0,
         gradeYear: "2024",
-        targetUniversities: results.filter(r => selectedMatches.includes(r.uni.uniId || r.uni._id)).map((r: any) => {
+        targetUniversities: results.filter((r: any) => selectedMatches.includes(r.uni.uniId || r.uni._id)).map((r: any) => {
           const id = r.uni.uniId || r.uni._id;
           const sch = scholarshipSelections[id];
           return `${r.uni.name} ${sch ? `(Targeting: ${sch})` : ''}`;
@@ -466,11 +466,10 @@ function ConsultingMatcher() {
               {user ? (
                 <Button 
                   onClick={() => submitMutation.mutate()} 
-                  isLoading={submitMutation.isPending}
-                  disabled={selectedMatches.length === 0}
+                  disabled={selectedMatches.length === 0 || submitMutation.isPending}
                   className="px-8"
                 >
-                  Submit {selectedMatches.length > 0 ? selectedMatches.length : ""} Selected to Counselor
+                  {submitMutation.isPending ? "Submitting..." : `Submit ${selectedMatches.length > 0 ? selectedMatches.length : ""} Selected to Counselor`}
                 </Button>
               ) : (
                 <div className="text-sm text-error font-bold">Please log in to submit your profile to a counselor.</div>

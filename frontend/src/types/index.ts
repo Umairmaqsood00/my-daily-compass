@@ -294,7 +294,7 @@ export interface Essay {
 export interface Notification {
   _id: string;
   user: User | string;
-  type: "ESSAY_SUBMITTED" | "ESSAY_REVIEWED" | "CONSULTING_SUBMITTED" | "PAYMENT_SUCCESS" | "ACCOUNT" | "TEST";
+  type: "ESSAY_SUBMITTED" | "ESSAY_REVIEWED" | "CONSULTING_SUBMITTED" | "PAYMENT_SUCCESS" | "ACCOUNT" | "TEST" | "CONTACT_INQUIRY" | "ADMIN_REPLY";
   title: string;
   message: string;
   isRead: boolean;

@@ -185,19 +185,19 @@ function Subscriptions() {
                       <Button
                         variant={plan.highlight ? "glass" : "outline"}
                         className="w-full py-3.5"
-                        onClick={() => handleSubscribe(plan.id || plan._id)}
-                        disabled={processingPlanId === (plan.id || plan._id)}
+                        onClick={() => handleSubscribe(plan.id || plan._id || "")}
+                        disabled={processingPlanId === (plan.id || plan._id || "")}
                       >
-                        {processingPlanId === (plan.id || plan._id) ? "Processing..." : plan.price === "$0" ? "Get Started Free" : "Subscribe Now"}
+                        {processingPlanId === (plan.id || plan._id || "") ? "Processing..." : plan.price === "$0" ? "Get Started Free" : "Subscribe Now"}
                       </Button>
                     ) : (
                       <Button
                         variant={plan.highlight ? "glass" : "outline"}
                         className="w-full py-3.5"
-                        onClick={() => handleSubscribe(plan.id || plan._id)}
-                        disabled={processingPlanId === (plan.id || plan._id)}
+                        onClick={() => handleSubscribe(plan.id || plan._id || "")}
+                        disabled={processingPlanId === (plan.id || plan._id || "")}
                       >
-                        {processingPlanId === (plan.id || plan._id) ? "Processing..." : plan.price === "$0" ? "Get Started Free" : "Subscribe Now"}
+                        {processingPlanId === (plan.id || plan._id || "") ? "Processing..." : plan.price === "$0" ? "Get Started Free" : "Subscribe Now"}
                       </Button>
                     )}
                   </div>

@@ -23,9 +23,9 @@ export const Route = createFileRoute("/consulting")({
   component: ConsultingMatcher,
 });
 
-const COUNTRIES_LIST = ["Pakistan","India","Bangladesh","Sri Lanka","Nepal","Philippines","Indonesia","Malaysia","Vietnam","Myanmar","Thailand","Cambodia","Other"];
+const COUNTRIES_LIST = ["USA", "UK", "Canada", "Australia", "China", "India", "Pakistan", "Bangladesh", "Sri Lanka", "Nepal", "Philippines", "Indonesia", "Malaysia", "Singapore", "Vietnam", "Myanmar", "Thailand", "Cambodia", "Japan", "South Korea", "Germany", "France", "Netherlands", "Other"];
 const STUDY_FIELDS = ["Computer Science","Engineering","Business","Medicine","Law","Sciences","Mathematics","Arts","Psychology","Economics","Architecture","Agriculture","Communication","Education","Design"];
-const GRADING_SYSTEMS = ["GPA (4.0 scale)","Percentage (100)","A-Levels (A*-E)","IB (45 points)"];
+const SCHOLARSHIP_TYPES = ["Presidential Scholarship", "Need-based Financial Aid", "Merit-based Scholarship", "Athletic Scholarship", "Departmental/Specific Scholarship", "External Scholarship", "No Scholarship Needed"];
 
 // Matcher Algorithm
 function scoreUniversity(uni: any, profile: any) {
@@ -33,20 +33,15 @@ function scoreUniversity(uni: any, profile: any) {
   let reasons = [];
   let warnings = [];
 
-  const normalizedGPA = normalizeGPA(profile.gpa, profile.gradingSystem);
-  if (normalizedGPA >= uni.minGPA) {
-    const gpaBonus = Math.min((normalizedGPA - uni.minGPA) * 20, 15);
-    score += 15 + gpaBonus;
-    reasons.push("Your grades meet the requirement");
+  if (profile.oLevel) {
+    score += 15;
+    reasons.push("O Level / Matric marks submitted for counselor review");
+  }
+  if (profile.aLevel) {
+    score += 10;
+    reasons.push("A Level / High School grades submitted for counselor review");
   } else {
-    const gap = uni.minGPA - normalizedGPA;
-    if (gap <= 0.2) {
-      score += 8;
-      warnings.push("Your GPA is slightly below average — still possible with strong extras");
-    } else {
-      score -= 5;
-      warnings.push("Your GPA is below the typical range for admitted students");
-    }
+    warnings.push("No A Level / High School grades provided — this may limit some university matching");
   }
 
   // Map budget range string to a numeric max value for calculation
@@ -103,27 +98,15 @@ function scoreUniversity(uni: any, profile: any) {
   return { uni, score: Math.max(score, 0), reasons, warnings, matchType, matchedPrograms };
 }
 
-function normalizeGPA(value: any, system: string) {
-  if (!value) return 0;
-  const num = parseFloat(value);
-  if (isNaN(num)) return 0;
-  
-  switch (system) {
-    case "Percentage (100)": return (num / 100) * 4;
-    case "A-Levels (A*-E)": return Math.min(num * 0.8, 4.0);
-    case "IB (45 points)": return (num / 45) * 4;
-    default: return num;
-  }
-}
-
 function ConsultingMatcher() {
   const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState({
     name: user?.name || "", 
     country: user?.country || "", 
-    gpa: "", 
-    gradingSystem: "GPA (4.0 scale)",
+    customCountry: "",
+    oLevel: "", 
+    aLevel: "",
     sat: "", 
     ielts: "", 
     toefl: "",
@@ -136,6 +119,7 @@ function ConsultingMatcher() {
   });
   const [showResults, setShowResults] = useState(false);
   const [selectedMatches, setSelectedMatches] = useState<number[]>([]);
+  const [scholarshipSelections, setScholarshipSelections] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Fetch universities from DB
@@ -152,6 +136,13 @@ function ConsultingMatcher() {
 
   const update = (key: string, val: any) => setProfile(p => ({ ...p, [key]: val }));
 
+  const availableCountries = useMemo(() => {
+    const countries = new Set(universities.map((u: any) => u.country));
+    // Ensure we always have some defaults if DB is empty
+    ["USA", "UK", "Canada", "Australia", "China", "India", "Pakistan"].forEach(c => countries.add(c));
+    return Array.from(countries).sort();
+  }, [universities]);
+
   const results = useMemo(() => {
     if (!showResults) return [];
     const filtered = universities.filter((u: any) => profile.preferredCountries.includes(u.country));
@@ -160,8 +151,8 @@ function ConsultingMatcher() {
   }, [showResults, profile, universities]);
 
   const canProceed = () => {
-    if (step === 0) return profile.name && profile.country;
-    if (step === 1) return profile.gpa && profile.gradingSystem;
+    if (step === 0) return profile.name && (profile.country === "Other" ? profile.customCountry : profile.country);
+    if (step === 1) return profile.oLevel.trim().length > 0;
     if (step === 2) return profile.preferredCountries.length > 0 && profile.fields.length > 0;
     if (step === 3) return profile.budget;
     return true;
@@ -171,12 +162,16 @@ function ConsultingMatcher() {
     mutationFn: async () => {
       const payload = {
         level: "UNDERGRADUATE",
-        secondaryType: "",
-        higherType: "",
-        gpa: profile.gpa,
+        secondaryType: profile.oLevel,
+        higherType: profile.aLevel,
+        gpa: profile.oLevel,
         satScore: parseInt(profile.sat) || 0,
         gradeYear: "2024",
-        targetUniversities: results.filter(r => selectedMatches.includes(r.uni.uniId || r.uni._id)).map((r: any) => r.uni.name),
+        targetUniversities: results.filter(r => selectedMatches.includes(r.uni.uniId || r.uni._id)).map((r: any) => {
+          const id = r.uni.uniId || r.uni._id;
+          const sch = scholarshipSelections[id];
+          return `${r.uni.name} ${sch ? `(Targeting: ${sch})` : ''}`;
+        }),
         extracurriculars: profile.extracurriculars || "None provided",
         budgetRange: profile.budget.toString(),
       };
@@ -234,28 +229,30 @@ function ConsultingMatcher() {
             {COUNTRIES_LIST.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
+        {profile.country === "Other" && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="pt-2">
+            <label className="block text-xs font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Type Your Country</label>
+            <Input value={profile.customCountry} onChange={e => update("customCountry", e.target.value)} placeholder="E.g. Brazil" />
+          </motion.div>
+        )}
       </div>
     </motion.div>,
     // Step 1: Academics
     <motion.div key="1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
       <h2 className="text-2xl font-display font-bold text-on-surface mb-1">Your academics</h2>
-      <p className="text-on-surface-variant text-sm mb-6">Enter your grades and test scores.</p>
+      <p className="text-on-surface-variant text-sm mb-6">Enter your grades and test scores (if any).</p>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">Grading System</label>
-          <select 
-            value={profile.gradingSystem} 
-            onChange={e => update("gradingSystem", e.target.value)}
-            className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-xl text-on-surface text-sm focus:border-accent outline-none appearance-none"
-          >
-            {GRADING_SYSTEMS.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
+          <label className="block text-xs font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">
+            O Level / Matric Marks <span className="text-error">*</span>
+          </label>
+          <Input type="text" value={profile.oLevel} onChange={e => update("oLevel", e.target.value)} placeholder="E.g. 8A* 1A or 95%" />
         </div>
         <div>
           <label className="block text-xs font-semibold text-on-surface-variant mb-2 uppercase tracking-wider">
-            {profile.gradingSystem === "GPA (4.0 scale)" ? "GPA (out of 4.0)" : profile.gradingSystem === "Percentage (100)" ? "Percentage" : "Score"}
+            High School / A-Level / FSC Grades (Optional)
           </label>
-          <Input type="number" value={profile.gpa} onChange={e => update("gpa", e.target.value)} placeholder="E.g. 3.7 or 85" />
+          <Input type="text" value={profile.aLevel} onChange={e => update("aLevel", e.target.value)} placeholder="E.g. A*AA or 88%" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -277,7 +274,7 @@ function ConsultingMatcher() {
       <div className="mb-6">
         <label className="block text-xs font-semibold text-on-surface-variant mb-3 uppercase tracking-wider">Preferred Countries (max 4)</label>
         <div className="flex flex-wrap gap-2">
-          {["USA","UK","Canada","Australia"].map(opt => (
+          {availableCountries.map(opt => (
             <button key={opt} onClick={() => toggleMulti(profile.preferredCountries, opt, 4, "preferredCountries")}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 profile.preferredCountries.includes(opt) ? "bg-accent/20 text-accent border border-accent/50" : "bg-surface-container border border-outline-variant/30 text-on-surface-variant hover:border-outline-variant"
@@ -433,6 +430,22 @@ function ConsultingMatcher() {
                         </div>
                       ))}
                     </div>
+
+                    {selectedMatches.includes(r.uni.uniId || r.uni._id) && (
+                      <div className="mt-6 pt-4 border-t border-outline-variant/20" onClick={(e) => e.stopPropagation()}>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant mb-2">
+                          Target Scholarship
+                        </label>
+                        <select 
+                          value={scholarshipSelections[r.uni.uniId || r.uni._id] || ""}
+                          onChange={(e) => setScholarshipSelections({ ...scholarshipSelections, [r.uni.uniId || r.uni._id]: e.target.value })}
+                          className="w-full px-4 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg text-sm text-on-surface outline-none focus:border-accent"
+                        >
+                          <option value="">Select a Scholarship Type</option>
+                          {SCHOLARSHIP_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 );
               })}

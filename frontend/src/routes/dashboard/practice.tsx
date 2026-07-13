@@ -5,6 +5,7 @@ import { Badge } from "../../components/ui/Badge";
 import { Icon } from "../../components/common/Icon";
 import { Select } from "../../components/ui/Select";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { ZoomableImage } from "../../components/ui/ZoomableImage";
 import { api } from "../../services/api";
 import type { Question, QuestionCategory } from "../../types";
 
@@ -35,6 +36,7 @@ function Practice() {
   const [result, setResult] = useState<{ isCorrect: boolean; correctAnswer: string; explanation: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, correct: 0 });
+  const [timeSpent, setTimeSpent] = useState(0);
 
   // Filters
   const [section, setSection] = useState("");
@@ -52,6 +54,16 @@ function Practice() {
     });
   }, []);
 
+  useEffect(() => {
+    let interval: any;
+    if (isPracticeMode && !showResult) {
+      interval = setInterval(() => {
+        setTimeSpent((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPracticeMode, showResult, currentIdx]);
+
   const fetchQuestions = async () => {
     setLoading(true);
     const params = new URLSearchParams();
@@ -67,6 +79,7 @@ function Practice() {
       setSelectedAnswer(null);
       setShowResult(false);
       setResult(null);
+      setTimeSpent(0);
     }
     setLoading(false);
   };
@@ -80,7 +93,7 @@ function Practice() {
     const res = await api.post("/api/practice/answer", {
       questionId: questions[currentIdx]._id,
       selectedAnswer,
-      timeSpent: 0,
+      timeSpent: timeSpent,
     });
     if (res.success) {
       setResult(res.result);
@@ -121,8 +134,12 @@ function Practice() {
         <div className="bg-surface/95 backdrop-blur-md border-b border-outline-variant/40 px-6 py-2.5 flex items-center justify-between shrink-0 gap-4 flex-wrap md:flex-nowrap">
           {/* Left: Title + Exit button */}
           <div className="flex items-center gap-3 shrink-0">
-            <h2 className="font-bold text-sm text-on-surface whitespace-nowrap">
+            <h2 className="font-bold text-sm text-on-surface whitespace-nowrap flex items-center gap-3">
               SAT Practice
+              <div className="bg-surface-container-high px-2 py-1 rounded text-[11px] font-mono font-bold text-on-surface flex items-center gap-1.5 ml-2">
+                <Icon name="timer" className="text-[14px]" />
+                {Math.floor(timeSpent / 60).toString().padStart(2, "0")}:{(timeSpent % 60).toString().padStart(2, "0")}
+              </div>
             </h2>
             <button
               onClick={() => {
@@ -326,8 +343,16 @@ function Practice() {
               <div className="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex items-center justify-between shrink-0">
                 <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Passage / Reference</span>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+              <div className="flex-1 overflow-y-auto p-6 scroll-smooth space-y-6">
+                {q.imageUrl && (
+                  <ZoomableImage src={q.imageUrl} />
+                )}
+                {rwSplit.passage && (
+                  <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+                )}
+                {rwSplit.prompt && (
+                  <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{rwSplit.prompt}</p>
+                )}
               </div>
             </div>
 
@@ -348,9 +373,6 @@ function Practice() {
 
               {/* Scrollable Body */}
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                {rwSplit.prompt && (
-                  <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{rwSplit.prompt}</p>
-                )}
 
                 {q.options && q.options.length > 0 ? (
                   <div className="space-y-2">
@@ -539,8 +561,16 @@ function Practice() {
             <div className="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex items-center justify-between">
               <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Passage / Reference</span>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+            <div className="p-6 overflow-y-auto max-h-[60vh] space-y-6 custom-scrollbar">
+              {q.imageUrl && (
+                <ZoomableImage src={q.imageUrl} />
+              )}
+              {rwSplit.passage && (
+                <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+              )}
+              {rwSplit.prompt && (
+                <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{rwSplit.prompt}</p>
+              )}
             </div>
           </div>
 
@@ -559,9 +589,6 @@ function Practice() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              {rwSplit.prompt && (
-                <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{rwSplit.prompt}</p>
-              )}
 
               {q.options && q.options.length > 0 ? (
                 <div className="space-y-2">

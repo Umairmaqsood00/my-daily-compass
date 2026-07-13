@@ -45,6 +45,7 @@ export interface Question {
   tags: string[];
   source: "MANUAL" | "AI_EXTRACTED" | "SAT";
   status: "DRAFT" | "REVIEW" | "PUBLISHED";
+  imageUrl?: string;
   createdBy: string;
   createdAt: string;
 }

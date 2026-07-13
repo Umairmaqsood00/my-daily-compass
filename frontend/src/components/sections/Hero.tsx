@@ -4,6 +4,7 @@ import { Icon } from "../common/Icon";
 import studentHero from "../../assets/student_hero.png";
 import { Link } from "@tanstack/react-router";
 import { api, resolveImageUrl } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 
 const DEFAULT_FEATURE = {
   studentName: "Admitted Student",
@@ -49,6 +50,7 @@ const CollageSkeleton = () => (
 );
 
 export function Hero() {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [feature, setFeature] = useState<any>({
     studentName: "Admitted Student",
@@ -125,12 +127,12 @@ export function Hero() {
             >
               Book Class <Icon name="arrow_forward" className="text-[16px]" />
             </Link>
-            <a
-              href="#services"
-              className="inline-flex items-center gap-3 rounded-xl border border-outline-variant bg-surface px-8 py-4 text-xs font-bold uppercase tracking-[0.1em] text-on-surface hover:bg-surface-container-low transition-all duration-300 group"
-            >
-              <Icon name="play_circle" className="text-[16px] text-accent group-hover:scale-110 transition-transform" /> Free Trial
-            </a>
+             <Link
+               to={user ? "/subscriptions" : "/auth/register"}
+               className="inline-flex items-center gap-3 rounded-xl border border-outline-variant bg-surface px-8 py-4 text-xs font-bold uppercase tracking-[0.1em] text-on-surface hover:bg-surface-container-low transition-all duration-300 group cursor-pointer"
+             >
+               <Icon name="play_circle" className="text-[16px] text-accent group-hover:scale-110 transition-transform" /> Free Trial
+             </Link>
           </div>
 
           <div className="pt-6 border-t border-outline-variant/50 max-w-lg">

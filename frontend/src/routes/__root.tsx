@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 
 import appCss from "../styles.css?url";
-import logoUrl from "../assets/logo.png?url";
+import faviconUrl from "../assets/favicon.svg?url";
 import { reportAppError } from "../lib/error-reporting";
 import { Toaster } from "../components/ui/sonner";
 
@@ -96,7 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      { rel: "icon", type: "image/png", href: logoUrl },
+      { rel: "icon", type: "image/svg+xml", href: faviconUrl },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

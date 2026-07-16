@@ -17,8 +17,11 @@ export function Footer() {
                 style={{ filter: "brightness(0) invert(1)" }}
               />
             </Link>
-            <p className="font-body text-xs leading-relaxed text-on-primary/60 max-w-sm">
-              Empowering students worldwide to conquer the digital SAT and secure admissions at elite universities.
+            <p className="font-body text-[13px] leading-relaxed text-on-primary/70 max-w-sm">
+              From SAT to the Ivy League 🦈<br/>
+              Elite Admissions Strategy Experts<br/>
+              SAT Mastery | Personal Statements + ECs<br/>
+              LUMS to Ivy League | Bachelors + Masters
             </p>
           </div>
 
@@ -39,7 +42,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/subscriptions" className="hover:text-accent transition-colors duration-300">
+                <Link to="/sat" className="hover:text-accent transition-colors duration-300">
                   Pricing & Plans
                 </Link>
               </li>
@@ -54,7 +57,12 @@ export function Footer() {
             <ul className="flex flex-col gap-2.5 font-body text-xs font-semibold">
               <li>
                 <Link to="/consulting" className="hover:text-accent transition-colors duration-300">
-                  College Matcher
+                  LUMS Counseling
+                </Link>
+              </li>
+              <li>
+                <Link to="/counseling-abroad" className="hover:text-accent transition-colors duration-300">
+                  Counseling Abroad
                 </Link>
               </li>
               <li>
@@ -77,18 +85,18 @@ export function Footer() {
             </h4>
             <ul className="flex flex-col gap-2.5 font-body text-xs font-semibold">
               <li>
+                <a href="mailto:satsharks@gmail.com" className="hover:text-accent transition-colors duration-300">
+                  satsharks@gmail.com
+                </a>
+              </li>
+              <li>
+                <a href="tel:+923164514334" className="hover:text-accent transition-colors duration-300">
+                  +92 316 4514334
+                </a>
+              </li>
+              <li>
                 <Link to="/" className="hover:text-accent transition-colors duration-300">
                   About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="hover:text-accent transition-colors duration-300">
-                  Support
-                </Link>
-              </li>
-              <li>
-                <Link to="/booking" className="hover:text-accent transition-colors duration-300">
-                  Book Session
                 </Link>
               </li>
             </ul>

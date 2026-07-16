@@ -265,9 +265,10 @@ export interface ConsultingRequest {
   higherTotal: number | null;
   higherGrades: string;
   gpa: string;
-  satScore: number;
+  satScore: number | null;
   gradeYear: string;
   targetUniversities: string[];
+  selectedScholarship: string;
   extracurriculars: string;
   budgetRange: string;
   status: "PENDING" | "IN_REVIEW" | "COMPLETED";

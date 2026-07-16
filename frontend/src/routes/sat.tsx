@@ -138,15 +138,21 @@ const oneOnOneFeatures = [
   },
 ];
 
+interface FeatureBlockProps {
+  heading: string;
+  bullets: string[];
+  IconComp: React.ComponentType;
+}
+
 // ── Components ──
-function FeatureBlock({ heading, bullets, IconComp }) {
+function FeatureBlock({ heading, bullets, IconComp }: FeatureBlockProps) {
   return (
     <div style={{ marginBottom: "22px" }}>
       <h4 style={{ color: "#0F1B2D", fontWeight: 700, fontSize: "15px", marginBottom: "10px", letterSpacing: "-0.01em" }}>
         {heading}
       </h4>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {bullets.map((b, i) => (
+        {bullets.map((b: string, i: number) => (
           <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
             <IconComp />
             <span style={{ color: "#3A4A5C", fontSize: "14px", lineHeight: "1.55" }}>{b}</span>
@@ -157,7 +163,13 @@ function FeatureBlock({ heading, bullets, IconComp }) {
   );
 }
 
-function PriceBadge({ amount, period, accent }) {
+interface PriceBadgeProps {
+  amount: string;
+  period: string;
+  accent: string;
+}
+
+function PriceBadge({ amount, period, accent }: PriceBadgeProps) {
   const isGold = accent === "gold";
   return (
     <div style={{
@@ -192,10 +204,10 @@ function LoadingSkeleton() {
 // ── Main Page ──
 function SATPrepPage() {
   const region = useRegion();
-  const [activeTier, setActiveTier] = useState(null);
-  const [hoveredTier, setHoveredTier] = useState(null);
+  const [activeTier, setActiveTier] = useState<number | null>(null);
+  const [hoveredTier, setHoveredTier] = useState<number | null>(null);
 
-  const prices = region === "loading" ? null : PRICING[region];
+  const prices = region === "loading" ? null : PRICING[region as keyof typeof PRICING];
 
   return (
     <div className="min-h-screen flex flex-col"><Header /><main className="flex-1"><div style={{ background: "#F7F9FC", minHeight: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>

@@ -475,7 +475,7 @@ function cleanCategoryName(qFile: string): string {
     .replace(/_Questions_v2$/i, "")
     .replace(/_Questions_Only$/i, "");
     
-  base = base.replace(/^DSAT_\d+_/i, "").replace(/^DSAT_Topic\d+_/i, "").replace(/^DSAT_/i);
+  base = base.replace(/^DSAT_\d+_/i, "").replace(/^DSAT_Topic\d+_/i, "").replace(/^DSAT_/i, "");
   base = base.replace(/_/g, " ").trim();
   
   const mapping: { [key: string]: string } = {

@@ -95,14 +95,20 @@ const wins = [
   "National level hackathon finalists",
 ];
 
-function FeatureBlock({ heading, bullets, Icon }) {
+interface FeatureBlockProps {
+  heading: string;
+  bullets: string[];
+  Icon: React.ComponentType;
+}
+
+function FeatureBlock({ heading, bullets, Icon }: FeatureBlockProps) {
   return (
     <div style={{ marginBottom: "22px" }}>
       <h4 style={{ color: "#0F1B2D", fontWeight: 700, fontSize: "15px", marginBottom: "10px", letterSpacing: "-0.01em" }}>
         {heading}
       </h4>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {bullets.map((b, i) => (
+        {bullets.map((b: string, i: number) => (
           <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
             <Icon />
             <span style={{ color: "#3A4A5C", fontSize: "14px", lineHeight: "1.55" }}>{b}</span>
@@ -114,8 +120,8 @@ function FeatureBlock({ heading, bullets, Icon }) {
 }
 
 function LUMSCounsellingContent() {
-  const [activeTier, setActiveTier] = useState(null);
-  const [hoveredTier, setHoveredTier] = useState(null);
+  const [activeTier, setActiveTier] = useState<number | null>(null);
+  const [hoveredTier, setHoveredTier] = useState<number | null>(null);
   const [whatsappHover, setWhatsappHover] = useState(false);
 
   return (

@@ -86,14 +86,20 @@ const tier2Features = [
   },
 ];
 
-function FeatureBlock({ heading, bullets, icon: Icon }) {
+interface FeatureBlockProps {
+  heading: string;
+  bullets: string[];
+  icon: React.ComponentType;
+}
+
+function FeatureBlock({ heading, bullets, icon: Icon }: FeatureBlockProps) {
   return (
     <div className="mb-5 last:mb-0">
       <h4 style={{ color: "#0F1B2D", fontWeight: 700, fontSize: "15px", marginBottom: "10px", letterSpacing: "-0.01em" }}>
         {heading}
       </h4>
       <div className="flex flex-col gap-2.5">
-        {bullets.map((b, i) => (
+        {bullets.map((b: string, i: number) => (
           <div key={i} className="flex gap-2.5 items-start">
             <Icon />
             <span style={{ color: "#3A4A5C", fontSize: "14px", lineHeight: "1.55" }}>{b}</span>
@@ -105,8 +111,8 @@ function FeatureBlock({ heading, bullets, icon: Icon }) {
 }
 
 function SATSharksTiers() {
-  const [activeTier, setActiveTier] = useState(null);
-  const [hoveredTier, setHoveredTier] = useState(null);
+  const [activeTier, setActiveTier] = useState<number | null>(null);
+  const [hoveredTier, setHoveredTier] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen flex flex-col"><Header /><main className="flex-1"><div style={{ background: "#F7F9FC", minHeight: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>

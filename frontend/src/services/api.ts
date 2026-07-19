@@ -8,6 +8,17 @@ export const resolveImageUrl = (url: string) => {
   if (!url) return "";
   if (url.startsWith("http")) return url;
   
+  if (API_BASE_URL) {
+    return `${API_BASE_URL}${url}`;
+  }
+  
+  if (typeof window !== "undefined") {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    // Map backend to port 5000 on the same host address
+    return `${protocol}//${hostname}:5000${url}`;
+  }
+  
   const isDev = (
     (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV) ||
     (typeof process !== "undefined" && process.env && process.env.NODE_ENV === "development")

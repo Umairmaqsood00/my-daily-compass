@@ -550,6 +550,25 @@ function SATPrepPage() {
               </Link>
             </div>
           </div>
+        ) : user.role === "ADMIN" ? (
+          <div className="text-center py-6 animate-fade-in">
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <Icon name="admin_panel_settings" className="text-3xl" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Admin Account Detected</h3>
+            <p className="text-on-surface-variant text-sm mb-6 max-w-sm mx-auto leading-relaxed">
+              You are logged in as an Administrator. Admins already have access to all areas and cannot purchase plans or upload payment proofs.
+            </p>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setSelectedPlan(null)}
+                className="w-full py-2.5 rounded-xl bg-primary text-on-primary hover:bg-accent text-sm font-semibold text-center transition-colors cursor-pointer"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
         ) : uploadSuccess ? (
           <div className="text-center py-6 animate-fade-in">
             <div className="w-16 h-16 bg-success/15 text-success rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">

@@ -23,6 +23,12 @@ export const uploadPaymentProof = async (req: AuthRequest, res: Response) => {
 
     const screenshotUrl = `/uploads/${file.filename}`;
 
+    if (req.user?.role === "ADMIN") {
+      const filePath = path.resolve(__dirname, "../../uploads", file.filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(403).json({ success: false, error: "Administrators cannot submit payment proofs." });
+    }
+
     if (!env.isDatabaseConfigured) {
       console.log(`[MOCK MODE] Received manual payment proof for plan ${planName} (${amount}) via ${paymentMethod}. File: ${file.filename}`);
       return res.status(201).json({
@@ -49,6 +55,12 @@ export const uploadPaymentProof = async (req: AuthRequest, res: Response) => {
       const filePath = path.resolve(__dirname, "../../uploads", file.filename);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       return res.status(404).json({ success: false, error: "User not found." });
+    }
+
+    if (userExists.role === "ADMIN") {
+      const filePath = path.resolve(__dirname, "../../uploads", file.filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(403).json({ success: false, error: "Administrators cannot submit payment proofs." });
     }
 
     const newProof = await PaymentProof.create({

@@ -5,6 +5,7 @@ import { Footer } from "../components/layout/Footer";
 import { useAuth } from "../hooks/useAuth";
 import { Modal } from "../components/ui/Modal";
 import { Icon } from "../components/common/Icon";
+import { getBackendUrl } from "../services/api";
 
 export const Route = createFileRoute("/sat")({
   component: SATPrepPage,
@@ -175,15 +176,12 @@ interface PriceBadgeProps {
 function PriceBadge({ amount, period, accent }: PriceBadgeProps) {
   const isGold = accent === "gold";
   return (
-    <div className={`inline-flex items-baseline gap-1 rounded-xl px-4 py-2 border ${
-      isGold ? "bg-accent/10 border-accent/25" : "bg-secondary/10 border-secondary/25"
-    }`}>
-      <span className={`text-2xl font-extrabold font-mono tracking-tight ${
-        isGold ? "text-[#D4911E]" : "text-secondary"
-      }`}>{amount}</span>
-      <span className={`text-xs font-semibold ${
-        isGold ? "text-[#B07A15]" : "text-secondary/80"
-      }`}>{period}</span>
+    <div className={`inline-flex items-baseline gap-1 rounded-xl px-4 py-2 border ${isGold ? "bg-accent/10 border-accent/25" : "bg-secondary/10 border-secondary/25"
+      }`}>
+      <span className={`text-2xl font-extrabold font-mono tracking-tight ${isGold ? "text-[#D4911E]" : "text-secondary"
+        }`}>{amount}</span>
+      <span className={`text-xs font-semibold ${isGold ? "text-[#B07A15]" : "text-secondary/80"
+        }`}>{period}</span>
     </div>
   );
 }
@@ -258,7 +256,7 @@ function SATPrepPage() {
 
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch("/api/payment/upload-proof", {
+      const res = await fetch(`${getBackendUrl()}/api/payment/upload-proof`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
@@ -282,7 +280,7 @@ function SATPrepPage() {
     setUploadError("");
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch("/api/payment/create-checkout", {
+      const res = await fetch(`${getBackendUrl()}/api/payment/create-checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -354,11 +352,10 @@ function SATPrepPage() {
                   <button
                     key={i}
                     onClick={() => setActiveTier(isActive ? null : i)}
-                    className={`flex-1 py-3 px-4 rounded-xl border-none cursor-pointer text-sm font-semibold transition-all duration-300 ${
-                      isActive 
-                        ? (i === 0 ? "bg-primary text-white shadow-sm" : "bg-[#F5A623] text-white shadow-sm") 
-                        : "bg-transparent text-on-surface-variant hover:text-on-surface"
-                    }`}
+                    className={`flex-1 py-3 px-4 rounded-xl border-none cursor-pointer text-sm font-semibold transition-all duration-300 ${isActive
+                      ? (i === 0 ? "bg-primary text-white shadow-sm" : "bg-[#F5A623] text-white shadow-sm")
+                      : "bg-transparent text-on-surface-variant hover:text-on-surface"
+                      }`}
                   >
                     {label} Sessions
                   </button>
@@ -373,9 +370,8 @@ function SATPrepPage() {
                 onMouseEnter={() => setHoveredTier(0)}
                 onMouseLeave={() => setHoveredTier(null)}
                 onClick={() => setActiveTier(activeTier === 0 ? null : 0)}
-                className={`bg-surface-container-lowest rounded-2xl p-8 cursor-pointer transition-all duration-300 border-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 ${
-                  activeTier === 0 ? "border-primary" : "border-outline-variant/30 hover:border-primary/50"
-                }`}
+                className={`bg-surface-container-lowest rounded-2xl p-8 cursor-pointer transition-all duration-300 border-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 ${activeTier === 0 ? "border-primary" : "border-outline-variant/30 hover:border-primary/50"
+                  }`}
               >
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -408,10 +404,9 @@ function SATPrepPage() {
                   </button>
                 </div>
 
-                <div 
-                  className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                    activeTier === 0 ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-                  }`}
+                <div
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${activeTier === 0 ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+                    }`}
                 >
                   <div className="border-t border-outline-variant/40 pt-5 mt-2">
                     {groupFeatures.map((f, i) => (
@@ -433,9 +428,8 @@ function SATPrepPage() {
                 onMouseEnter={() => setHoveredTier(1)}
                 onMouseLeave={() => setHoveredTier(null)}
                 onClick={() => setActiveTier(activeTier === 1 ? null : 1)}
-                className={`bg-surface-container-lowest rounded-2xl p-8 cursor-pointer transition-all duration-300 border-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 relative overflow-visible ${
-                  activeTier === 1 ? "border-accent" : "border-outline-variant/30 hover:border-accent/50"
-                }`}
+                className={`bg-surface-container-lowest rounded-2xl p-8 cursor-pointer transition-all duration-300 border-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 relative overflow-visible ${activeTier === 1 ? "border-accent" : "border-outline-variant/30 hover:border-accent/50"
+                  }`}
               >
                 <div className="absolute -top-3 right-6 bg-accent text-primary text-[10px] font-mono font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
                   Maximum Results
@@ -470,10 +464,9 @@ function SATPrepPage() {
                   </button>
                 </div>
 
-                <div 
-                  className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                    activeTier === 1 ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-                  }`}
+                <div
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${activeTier === 1 ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+                    }`}
                 >
                   <div className="border-t border-outline-variant/40 pt-5 mt-2">
                     {oneOnOneFeatures.map((f, i) => (
@@ -628,33 +621,30 @@ function SATPrepPage() {
               <button
                 type="button"
                 onClick={() => { setActiveTab("bank"); setUploadError(""); }}
-                className={`flex-1 pb-3 text-sm font-semibold transition-all border-b-2 cursor-pointer ${
-                  activeTab === "bank"
-                    ? "border-primary text-primary font-bold"
-                    : "border-transparent text-on-surface-variant hover:text-on-surface"
-                }`}
+                className={`flex-1 pb-3 text-sm font-semibold transition-all border-b-2 cursor-pointer ${activeTab === "bank"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-on-surface-variant hover:text-on-surface"
+                  }`}
               >
                 Bank Transfer
               </button>
               <button
                 type="button"
                 onClick={() => { setActiveTab("wallet"); setUploadError(""); }}
-                className={`flex-1 pb-3 text-sm font-semibold transition-all border-b-2 cursor-pointer ${
-                  activeTab === "wallet"
-                    ? "border-primary text-primary font-bold"
-                    : "border-transparent text-on-surface-variant hover:text-on-surface"
-                }`}
+                className={`flex-1 pb-3 text-sm font-semibold transition-all border-b-2 cursor-pointer ${activeTab === "wallet"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-on-surface-variant hover:text-on-surface"
+                  }`}
               >
                 Mobile Wallet
               </button>
               <button
                 type="button"
                 onClick={() => { setActiveTab("card"); setUploadError(""); }}
-                className={`flex-1 pb-3 text-sm font-semibold transition-all border-b-2 cursor-pointer ${
-                  activeTab === "card"
-                    ? "border-primary text-primary font-bold"
-                    : "border-transparent text-on-surface-variant hover:text-on-surface"
-                }`}
+                className={`flex-1 pb-3 text-sm font-semibold transition-all border-b-2 cursor-pointer ${activeTab === "card"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-on-surface-variant hover:text-on-surface"
+                  }`}
               >
                 Credit/Debit Card
               </button>
@@ -875,4 +865,3 @@ function SATPrepPage() {
     </div>
   );
 }
-

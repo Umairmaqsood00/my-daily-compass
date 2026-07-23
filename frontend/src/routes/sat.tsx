@@ -75,7 +75,7 @@ const groupFeatures = [
   {
     heading: "Intensive Weekly Schedule",
     bullets: [
-      "6 live online sessions every week — 3 English, 3 Math",
+      "6 live online sessions every week , 3 English, 3 Math",
       "23 sessions per month with 7 dedicated practice tests",
       "Consistent structure that builds momentum week after week",
     ],
@@ -84,14 +84,14 @@ const groupFeatures = [
     heading: "Real SAT Practice, Not Random Questions",
     bullets: [
       "Weekly full-length tests using actual past SAT papers",
-      "You practice under real conditions — no surprises on test day",
+      "You practice under real conditions , no surprises on test day",
       "Detailed score analysis after every test to track your growth",
     ],
   },
   {
     heading: "Desmos, Shortcuts & Strategy",
     bullets: [
-      "Dedicated time mastering Desmos — the graphing calculator allowed in SAT Math",
+      "Dedicated time mastering Desmos , the graphing calculator allowed in SAT Math",
       "English shortcuts and tricks that save critical minutes per section",
       "Math strategies that turn hard problems into quick wins",
     ],
@@ -99,8 +99,8 @@ const groupFeatures = [
   {
     heading: "Full Support, Nothing Extra to Buy",
     bullets: [
-      "All study materials provided — books, past papers, question banks",
-      "Your instructor's number is yours — ask questions anytime after class",
+      "All study materials provided , books, past papers, question banks",
+      "Your instructor's number is yours , ask questions anytime after class",
       "After your first month, you get a personal 1-on-1 session with your instructor",
     ],
   },
@@ -112,13 +112,13 @@ const oneOnOneFeatures = [
     bullets: [
       "Every session is built around your specific strengths and weaknesses",
       "Diagnostic test on day one to build a custom study roadmap",
-      "Flexible scheduling — sessions happen when they work for you",
+      "Flexible scheduling , sessions happen when they work for you",
     ],
   },
   {
     heading: "The Same Proven Curriculum, Personalized",
     bullets: [
-      "Same 6-session weekly intensity — 3 English, 3 Math",
+      "Same 6-session weekly intensity , 3 English, 3 Math",
       "Full-length SAT past papers every week under timed conditions",
       "Individual score breakdowns with targeted action plans after each test",
     ],
@@ -134,8 +134,8 @@ const oneOnOneFeatures = [
   {
     heading: "Always-On Access & Materials",
     bullets: [
-      "All books, past papers, and resources included — nothing extra to buy",
-      "Direct WhatsApp access to your tutor — not a group chat, just you",
+      "All books, past papers, and resources included , nothing extra to buy",
+      "Direct WhatsApp access to your tutor , not a group chat, just you",
       "Continuous progress tracking and strategy adjustments between sessions",
     ],
   },
@@ -315,14 +315,14 @@ function SATPrepPage() {
           <div className="bg-gradient-to-br from-[#0B1929] via-[#162D4D] to-[#1A3558] py-10 px-6 text-center">
             <div className="max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 bg-accent/15 border border-accent/30 rounded-full px-4 py-1.5 mb-6">
-                <span className="font-mono text-xs font-bold text-accent tracking-widest uppercase">SAT / ACT Preparation</span>
+                <span className="font-mono text-xs font-bold text-accent tracking-widest uppercase">SAT Preparation</span>
               </div>
               <h1 className="font-display text-4xl font-extrabold text-white leading-tight mb-4 tracking-tight md:text-5xl">
                 Stop Guessing.<br />
                 <span className="text-[#5BA3F5]">Start Scoring.</span>
               </h1>
               <p className="text-sm md:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
-                6 live sessions a week. Actual past papers every week. Desmos mastery. Shortcuts that save minutes. Everything you need — nothing you don't.
+                6 live sessions a week. Actual past papers every week. Desmos mastery. Shortcuts that save minutes. Everything you need , nothing you don't.
               </p>
             </div>
           </div>
@@ -451,7 +451,7 @@ function SATPrepPage() {
                   <h3 className="font-body font-bold text-xl text-on-surface">1-on-1 Sessions</h3>
                 </div>
                 <p className="text-sm text-on-surface-variant leading-relaxed mb-4 pl-12">
-                  Every session is built around you — your weaknesses, your pace, your target score.
+                  Every session is built around you , your weaknesses, your pace, your target score.
                 </p>
                 <div className="pl-12 mb-6 flex flex-wrap items-center gap-3">
                   {prices ? (
@@ -494,22 +494,19 @@ function SATPrepPage() {
             {/* CTA */}
             <div className="text-center py-12 pb-16">
               <p className="text-sm md:text-base text-on-surface-variant mb-6 max-w-md mx-auto leading-relaxed">
-                Not sure which format is right for you? We'll help you decide — no pressure.
+                Not sure which format is right for you? We'll help you decide , no pressure.
               </p>
               <a
-                href="https://wa.me/923164514334?text=Hi%20I%20would%20like%20to%20take%20a%20free%20trial%20for%20SAT%20prep%20or%20wanna%20know%20brief%20thing%20about%20SAT%20prep."
+                href="https://wa.me/923164514334?text=Hi%20I%20would%20like%20to%20get%20more%20info%20about%20SAT%20prep."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-xs font-bold uppercase tracking-[0.08em] text-on-primary shark-shadow hover:bg-accent transition-all duration-300"
+                className="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-8 py-3.5 text-xs font-bold uppercase tracking-[0.08em] text-white shark-shadow hover:bg-[#20ba59] transition-all duration-300"
               >
-                Book a Free Trial Session
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.333 4.982L2 22l5.233-1.371a9.936 9.936 0 004.779 1.22h.004c5.505 0 9.989-4.478 9.99-9.985A9.983 9.983 0 0012.012 2zm4.957 14.215c-.273.767-1.561 1.481-2.148 1.54-.58.06-1.169.311-3.709-.738-3.252-1.344-5.344-4.657-5.507-4.877-.162-.22-1.302-1.733-1.302-3.31 0-1.579.825-2.353 1.116-2.65.29-.297.77-.381 1.008-.381.238 0 .476.002.68.01.209.009.49-.078.766.587.283.682.966 2.356 1.05 2.528.083.172.138.373.023.602-.114.23-.172.373-.341.57-.169.196-.355.439-.508.587-.168.163-.344.341-.148.68.196.34 0 .34.872 1.121 1.125.998 2.08 1.307 2.375 1.454.296.147.47.127.646-.076.177-.203.766-.89.972-1.192.206-.303.411-.254.694-.148.283.106 1.796.848 2.106 1.002.311.155.518.23.593.36.074.13.074.754-.2 1.521z" />
                 </svg>
+                Get More Info on WhatsApp
               </a>
-              <p className="font-mono text-[10px] md:text-xs text-on-surface-variant/60 mt-4 uppercase tracking-widest">
-                satsharks.org  ·  0316 451 4334
-              </p>
             </div>
           </div>
         </div>

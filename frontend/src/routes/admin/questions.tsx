@@ -271,7 +271,7 @@ function AdminQuestions() {
                         )}
                       </div>
                     </td>
-                    <td className="p-4 text-sm">{typeof q.category === "object" ? q.category.name : "—"}</td>
+                    <td className="p-4 text-sm">{typeof q.category === "object" ? q.category.name : ","}</td>
                     <td className="p-4">
                       <Badge variant={q.difficulty === "EASY" ? "success" : q.difficulty === "HARD" ? "error" : "warning"}>{q.difficulty}</Badge>
                     </td>

@@ -61,7 +61,6 @@ function Practice() {
   useEffect(() => {
     fetchPracticeHistory();
   }, []);
-  const [timeSpent, setTimeSpent] = useState(0);
 
   // Filters
   const [section, setSection] = useState("");
@@ -79,15 +78,24 @@ function Practice() {
     });
   }, []);
 
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
   useEffect(() => {
-    let interval: any;
-    if (isPracticeMode && !showResult) {
-      interval = setInterval(() => {
-        setTimeSpent((prev) => prev + 1);
-      }, 1000);
+    let interval: NodeJS.Timeout;
+    if (isPracticeMode && isTimerRunning) {
+      interval = setInterval(() => setTimeSpent((t) => t + 1), 1000);
     }
     return () => clearInterval(interval);
-  }, [isPracticeMode, showResult, currentIdx]);
+  }, [isPracticeMode, isTimerRunning]);
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+
 
   const fetchQuestions = async () => {
     setLoading(true);
@@ -104,7 +112,6 @@ function Practice() {
       setSelectedAnswer(null);
       setShowResult(false);
       setResult(null);
-      setTimeSpent(0);
     }
     setLoading(false);
   };
@@ -118,7 +125,7 @@ function Practice() {
     const res = await api.post("/api/practice/answer", {
       questionId: questions[currentIdx]._id,
       selectedAnswer,
-      timeSpent: timeSpent,
+      timeSpent,
     });
     if (res.success) {
       setResult(res.result);
@@ -178,6 +185,18 @@ function Practice() {
             >
               <Icon name="logout" className="text-[13px]" />
               <span>Exit</span>
+            </button>
+            
+            <button
+              onClick={() => setIsTimerRunning(!isTimerRunning)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors text-xs font-bold cursor-pointer ${
+                isTimerRunning 
+                  ? "border-primary bg-primary/10 text-primary" 
+                  : "border-outline-variant hover:bg-surface-container-low text-on-surface-variant"
+              }`}
+            >
+              <Icon name={isTimerRunning ? "pause" : "play_arrow"} className="text-[13px]" />
+              <span className="font-mono">{formatTime(timeSpent)}</span>
             </button>
           </div>
 

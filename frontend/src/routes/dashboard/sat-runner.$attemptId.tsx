@@ -967,8 +967,8 @@ function SATRunner() {
                       >
                         {i + 1}
                         {isReview && (
-                          <span className="absolute -top-1.5 -right-1.5 flex h-[17px] w-[17px] items-center justify-center rounded-full bg-accent text-primary border border-white shadow-sm">
-                            <Icon name="flag" className="text-[9px]" />
+                          <span className="absolute -top-2 -right-2 text-accent">
+                            <Icon name="flag" className="text-[16px]" />
                           </span>
                         )}
                       </button>

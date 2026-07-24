@@ -968,7 +968,7 @@ function SATRunner() {
                         {i + 1}
                         {isReview && (
                           <span className="absolute -top-2 -right-2 text-accent">
-                            <Icon name="flag" className="text-[16px]" />
+                            <Icon name="flag" className="text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }} />
                           </span>
                         )}
                       </button>

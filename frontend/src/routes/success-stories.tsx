@@ -11,6 +11,7 @@ export const Route = createFileRoute("/success-stories")({
 
 function SuccessStories() {
   const [stories, setStories] = useState<any[]>([]);
+  const [activeCategory, setActiveCategory] = useState<"SAT" | "ADMISSION">("SAT");
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -18,7 +19,7 @@ function SuccessStories() {
     const fetchStories = async () => {
       setIsLoading(true);
       try {
-        const res = await api.get("/api/success-stories");
+        const res = await api.get(`/api/success-stories?category=${activeCategory}`);
         if (res.success) {
           setStories(res.stories || []);
         } else {
@@ -32,7 +33,7 @@ function SuccessStories() {
       }
     };
     fetchStories();
-  }, []);
+  }, [activeCategory]);
 
   const getEmbedUrl = (url: string) => {
     if (!url) return "";
@@ -96,9 +97,30 @@ function SuccessStories() {
               <h1 className="mt-6 font-display text-4xl font-extrabold tracking-[-0.02em] md:text-5xl lg:text-6xl text-on-surface">
                 Student <span className="text-primary">Success Stories</span>
               </h1>
-              <p className="mt-6 text-lg text-on-surface-variant">
-                Join hundreds of students who have achieved their target scores and gained admission to top-tier universities worldwide with SAT Sharks.
-              </p>
+            </div>
+
+            {/* Category tabs */}
+            <div className="flex justify-center gap-2 mt-8 select-none">
+              <button
+                onClick={() => setActiveCategory("SAT")}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border-none cursor-pointer ${
+                  activeCategory === "SAT"
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "bg-surface text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
+                }`}
+              >
+                SAT Prep Success
+              </button>
+              <button
+                onClick={() => setActiveCategory("ADMISSION")}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border-none cursor-pointer ${
+                  activeCategory === "ADMISSION"
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "bg-surface text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
+                }`}
+              >
+                College Admissions Success
+              </button>
             </div>
             
             <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -155,7 +177,7 @@ function SuccessStories() {
                       <div className="h-[1px] w-full bg-outline-variant/30 my-4" />
   
                       {/* Testimonial Quote */}
-                      <blockquote className="text-on-surface leading-relaxed text-sm italic font-light">
+                      <blockquote className="text-on-surface/90 leading-relaxed text-[16px] italic font-medium">
                         "{item.quote}"
                       </blockquote>
                     </div>

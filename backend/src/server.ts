@@ -60,6 +60,7 @@ import essayRoutes from "./routes/essay.routes";
 import notificationRoutes from "./routes/notification.routes";
 import universityRoutes from "./routes/university.routes";
 import paymentRoutes from "./routes/payment.routes";
+import studyMaterialRoutes from "./routes/study-material.routes";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -79,6 +80,8 @@ app.use("/api/essays", essayRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/universities", universityRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/study-materials", studyMaterialRoutes);
+
 
 // Serve uploaded files with cross-origin headers so images load from any network origin
 import path from "path";
@@ -87,6 +90,51 @@ app.use("/uploads", (req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 }, express.static(path.resolve(__dirname, "../uploads")));
+
+// Dynamic Sitemap and Robots.txt
+app.get("/sitemap.xml", (req: Request, res: Response) => {
+  const host = req.get("host") || "satsharks.com";
+  const protocol = req.secure ? "https" : "http";
+  const origin = `${protocol}://${host}`;
+
+  const urls = [
+    { loc: `${origin}/`, changefreq: "daily", priority: 1.0 },
+    { loc: `${origin}/sat`, changefreq: "weekly", priority: 0.8 },
+    { loc: `${origin}/counseling-abroad`, changefreq: "weekly", priority: 0.8 },
+    { loc: `${origin}/consulting`, changefreq: "weekly", priority: 0.8 },
+    { loc: `${origin}/contact`, changefreq: "monthly", priority: 0.5 },
+    { loc: `${origin}/success-stories`, changefreq: "daily", priority: 0.7 },
+  ];
+
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  urls.forEach((url) => {
+    xml += '  <url>\n';
+    xml += `    <loc>${url.loc}</loc>\n`;
+    xml += `    <changefreq>${url.changefreq}</changefreq>\n`;
+    xml += `    <priority>${url.priority}</priority>\n`;
+    xml += '  </url>\n';
+  });
+  xml += '</urlset>';
+
+  res.header("Content-Type", "application/xml");
+  res.status(200).send(xml);
+});
+
+app.get("/robots.txt", (req: Request, res: Response) => {
+  const host = req.get("host") || "satsharks.com";
+  const protocol = req.secure ? "https" : "http";
+  const origin = `${protocol}://${host}`;
+
+  let robots = "User-agent: *\n";
+  robots += "Allow: /\n";
+  robots += "Disallow: /admin\n";
+  robots += "Disallow: /dashboard\n";
+  robots += `Sitemap: ${origin}/sitemap.xml\n`;
+
+  res.header("Content-Type", "text/plain");
+  res.status(200).send(robots);
+});
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, _next: NextFunction) => {

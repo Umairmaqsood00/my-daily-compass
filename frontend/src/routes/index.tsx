@@ -7,6 +7,7 @@ import { Stats } from "../components/sections/Stats";
 import { Services } from "../components/sections/Services";
 import { Testimonials } from "../components/sections/Testimonials";
 import { CTA } from "../components/sections/CTA";
+import { ContactForm } from "../components/common/ContactForm";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,6 +41,7 @@ function Landing() {
         <Services />
         <Testimonials />
         <CTA />
+        <ContactForm />
       </main>
       <Footer />
     </div>

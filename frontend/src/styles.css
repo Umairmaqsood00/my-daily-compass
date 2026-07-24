@@ -48,9 +48,9 @@
   --color-primary-fixed: #E6EEFA;
   --color-primary-fixed-dim: #99C0FA;
 
-  --font-display: "Cormorant Garamond", Georgia, serif;
-  --font-headline: "Cormorant Garamond", Georgia, serif;
-  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "League Spartan", sans-serif;
+  --font-headline: "League Spartan", sans-serif;
+  --font-body: "League Spartan", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --radius-DEFAULT: 0.25rem;

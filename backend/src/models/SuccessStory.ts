@@ -7,6 +7,7 @@ export interface ISuccessStory extends Document {
   university: string;
   imageUrl?: string;
   videoUrl?: string;
+  category: "SAT" | "ADMISSION";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,12 @@ const SuccessStorySchema: Schema = new Schema(
     university: { type: String, required: true },
     imageUrl: { type: String, required: false },
     videoUrl: { type: String, required: false },
+    category: {
+      type: String,
+      enum: ["SAT", "ADMISSION"],
+      default: "SAT",
+      required: true,
+    },
   },
   { timestamps: true }
 );

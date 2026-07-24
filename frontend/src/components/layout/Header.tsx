@@ -27,7 +27,6 @@ export function Header() {
   const links = [
     { to: "/", hash: "services", label: "Services" },
     { to: "/university-matcher", hash: undefined, label: "University Matcher" },
-    { to: "/booking", hash: undefined, label: "Book Session" },
     { to: "/sat", hash: undefined, label: "Pricing" },
     { to: "/contact", hash: undefined, label: "Contact" },
     ...(user?.role === "STUDENT" ? [{ to: "/dashboard/", hash: undefined, label: "Dashboard" }] : []),
@@ -59,7 +58,7 @@ export function Header() {
                   }
                 }
               }}
-              className={`relative py-1 font-body ${user ? "text-[11px] xl:text-[12px]" : "text-[13px]"} font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-primary transition-colors duration-300 group whitespace-nowrap`}
+              className="relative py-1 font-body text-[13px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-primary transition-colors duration-300 group whitespace-nowrap"
             >
               {l.label}
               <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-accent transition-all duration-300 group-hover:w-full" />
@@ -70,10 +69,10 @@ export function Header() {
           {user ? (
             <div className="flex items-center gap-5">
               <NotificationBell />
-              <span className="font-body text-[11px] xl:text-[12px] font-semibold uppercase tracking-[0.08em] text-on-surface whitespace-nowrap">Hi, {user.name}</span>
+              <span className="font-body text-[13px] font-semibold uppercase tracking-[0.08em] text-on-surface whitespace-nowrap">Hi, {user.name}</span>
               <button
                 onClick={handleLogout}
-                className="text-[11px] xl:text-[12px] font-bold uppercase tracking-[0.08em] text-on-surface-variant hover:text-accent transition-colors cursor-pointer"
+                className="text-[13px] font-bold uppercase tracking-[0.08em] text-on-surface-variant hover:text-accent transition-colors cursor-pointer"
               >
                 Logout
               </button>

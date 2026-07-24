@@ -17,7 +17,7 @@ export function Footer() {
                 style={{ filter: "brightness(0) invert(1)" }}
               />
             </Link>
-            <p className="font-body text-[13px] leading-relaxed text-white max-w-sm">
+            <p className="font-body text-[14.5px] leading-relaxed text-white max-w-sm">
               From SAT to the Ivy League 🦈<br/>
               Elite Admissions Strategy Experts<br/>
               SAT Mastery | Personal Statements + ECs<br/>
@@ -30,7 +30,7 @@ export function Footer() {
             <h4 className="font-display text-sm font-extrabold uppercase tracking-wider text-white">
               SAT Prep
             </h4>
-            <ul className="flex flex-col gap-2.5 font-body text-xs font-semibold">
+            <ul className="flex flex-col gap-2.5 font-body text-sm font-medium">
               <li>
                 <Link to="/dashboard/sat-tests" className="hover:text-accent transition-colors duration-300">
                   Diagnostic Tests
@@ -54,7 +54,7 @@ export function Footer() {
             <h4 className="font-display text-sm font-extrabold uppercase tracking-wider text-white">
               Consulting
             </h4>
-            <ul className="flex flex-col gap-2.5 font-body text-xs font-semibold">
+            <ul className="flex flex-col gap-2.5 font-body text-sm font-medium">
               <li>
                 <Link to="/consulting" className="hover:text-accent transition-colors duration-300">
                   LUMS Counseling
@@ -83,7 +83,7 @@ export function Footer() {
             <h4 className="font-display text-sm font-extrabold uppercase tracking-wider text-white">
               Company
             </h4>
-            <ul className="flex flex-col gap-2.5 font-body text-xs font-semibold">
+            <ul className="flex flex-col gap-2.5 font-body text-sm font-medium">
               <li>
                 <a href="mailto:satsharks@gmail.com" className="hover:text-accent transition-colors duration-300">
                   satsharks@gmail.com

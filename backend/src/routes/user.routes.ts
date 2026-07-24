@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { getCurrentUser, getUsers, updateUserSubscription, updateUserStatus } from "../controllers/user.controller";
+import { getCurrentUser, getUsers, updateUserSubscription, updateUserStatus, updateUserSettings } from "../controllers/user.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { requireAdmin } from "../middleware/role.middleware";
 
 const router = Router();
 
 router.get("/me", authenticate, getCurrentUser);
+router.put("/me/settings", authenticate, updateUserSettings);
+
 
 // Admin Routes
 router.get("/", authenticate, requireAdmin(), getUsers);

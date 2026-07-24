@@ -1,6 +1,7 @@
 import { Response } from "express";
 import PracticeSession from "../models/PracticeSession";
 import Question from "../models/Question";
+import User from "../models/User";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { checkAnswerCorrectness } from "../utils/grading";
 
@@ -33,6 +34,33 @@ export const submitPracticeAnswer = async (req: AuthRequest, res: Response) => {
       timeSpent: timeSpent || 0,
     });
 
+    // Update user points, streak, and daily practice count
+    const user = await User.findById(studentId);
+    if (user) {
+      if (isCorrect) {
+        user.leaderboardPoints += 10;
+      }
+      
+      const todayStr = new Date().toISOString().split("T")[0];
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+      if (user.lastActiveDate === yesterdayStr) {
+        user.streakCount += 1;
+        user.dailyPracticeProgress = 1;
+        user.lastActiveDate = todayStr;
+      } else if (user.lastActiveDate === todayStr) {
+        user.dailyPracticeProgress += 1;
+      } else {
+        user.streakCount = 1;
+        user.dailyPracticeProgress = 1;
+        user.lastActiveDate = todayStr;
+      }
+      
+      await user.save();
+    }
+
     res.status(201).json({
       success: true,
       result: {
@@ -46,6 +74,7 @@ export const submitPracticeAnswer = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
 
 export const getPracticeHistory = async (req: AuthRequest, res: Response) => {
   try {

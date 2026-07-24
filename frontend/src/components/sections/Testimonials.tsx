@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Icon } from "../common/Icon";
 import { useState, useEffect } from "react";
-import { api } from "../../services/api";
+import { api, resolveImageUrl } from "../../services/api";
 import { Link } from "@tanstack/react-router";
 
 export function Testimonials() {
@@ -138,7 +138,7 @@ export function Testimonials() {
                   {/* Centered Large Student Avatar on Top */}
                   {t.imageUrl ? (
                     <img
-                      src={t.imageUrl}
+                      src={resolveImageUrl(t.imageUrl)}
                       alt={t.name}
                       className="w-20 h-20 rounded-full object-cover border-2 border-primary/20 shadow-md mb-4"
                     />
@@ -175,7 +175,7 @@ export function Testimonials() {
                   <div className="h-[1px] w-full bg-outline-variant/30 my-4" />
   
                   {/* Testimonial Quote */}
-                  <blockquote className="text-on-surface leading-relaxed text-sm italic font-light">
+                  <blockquote className="text-on-surface/90 leading-relaxed text-[16px] italic font-medium">
                     "{t.quote}"
                   </blockquote>
                 </div>

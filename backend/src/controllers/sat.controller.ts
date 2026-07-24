@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import SATTest from "../models/SATTest";
 import SATTestAttempt from "../models/SATTestAttempt";
 import Question from "../models/Question";
+import User from "../models/User";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { checkAnswerCorrectness } from "../utils/grading";
 
@@ -327,6 +328,32 @@ async function finalizeAttempt(attempt: any, res: Response) {
   attempt.completedAt = new Date();
 
   await attempt.save();
+
+  // Update student stats for gamification
+  try {
+    const student = await User.findById(attempt.student);
+    if (student) {
+      const pointsToAdd = (totalCorrect * 10) + 100; // 10 points per correct + 100 bonus for full test
+      student.leaderboardPoints += pointsToAdd;
+
+      const todayStr = new Date().toISOString().split("T")[0];
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+      if (student.lastActiveDate === yesterdayStr) {
+        student.streakCount += 1;
+        student.lastActiveDate = todayStr;
+      } else if (student.lastActiveDate !== todayStr) {
+        student.streakCount = 1;
+        student.lastActiveDate = todayStr;
+      }
+      await student.save();
+    }
+  } catch (err) {
+    console.error("Error updating user stats on mock test completion:", err);
+  }
+
   res.status(200).json({ success: true, attempt });
 }
 

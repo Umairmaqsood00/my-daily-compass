@@ -22,15 +22,17 @@ interface StoryForm {
   quote: string;
   imageUrl: string;
   videoUrl: string;
+  category: "SAT" | "ADMISSION";
 }
 
 function AdminSuccessStories() {
   const { user } = useAuth();
   const [stories, setStories] = useState<any[]>([]);
+  const [filterCategory, setFilterCategory] = useState<"ALL" | "SAT" | "ADMISSION">("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStory, setEditingStory] = useState<StoryForm | null>(null);
   const [formData, setFormData] = useState<StoryForm>({
-    name: "", score: "", university: "", quote: "", imageUrl: "", videoUrl: "",
+    name: "", score: "", university: "", quote: "", imageUrl: "", videoUrl: "", category: "SAT",
   });
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,7 +111,7 @@ function AdminSuccessStories() {
 
   const openAddModal = () => {
     setEditingStory(null);
-    setFormData({ name: "", score: "", university: "", quote: "", imageUrl: "", videoUrl: "" });
+    setFormData({ name: "", score: "", university: "", quote: "", imageUrl: "", videoUrl: "", category: "SAT" });
     setFormError("");
     setIsModalOpen(true);
   };
@@ -119,6 +121,7 @@ function AdminSuccessStories() {
     setFormData({
       name: story.name, score: story.score, university: story.university,
       quote: story.quote, imageUrl: story.imageUrl || "", videoUrl: story.videoUrl || "",
+      category: story.category || "SAT",
     });
     setFormError("");
     setIsModalOpen(true);
@@ -221,45 +224,80 @@ function AdminSuccessStories() {
         </div>
       )}
 
-      {stories.length === 0 ? (
-        <EmptyState icon="social_leaderboard" title="No success stories" description="Add your first success story!" />
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {stories.map((story: any) => (
-            <div key={story._id || story.name} className="rounded-2xl bg-surface-container-lowest p-6 border border-outline-variant/40 flex flex-col justify-between hover-lift">
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  {story.imageUrl ? (
-                    <img src={resolveImageUrl(story.imageUrl)} alt={story.name} className="w-12 h-12 rounded-full object-cover border border-outline-variant" />
-                  ) : (
-                    <div className="grid h-12 w-12 place-items-center rounded-full bg-primary text-on-primary font-display text-lg font-bold">{story.name.charAt(0)}</div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-on-surface text-lg">{story.name}</h3>
-                    <div className="font-mono text-xs uppercase tracking-wider text-primary">{story.score}</div>
+      {/* Filter Tabs */}
+      <div className="flex gap-2 mb-6 border-b border-outline-variant/30 pb-3 select-none">
+        {[
+          { id: "ALL", label: "All Categories" },
+          { id: "SAT", label: "SAT Prep" },
+          { id: "ADMISSION", label: "College Admissions" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilterCategory(tab.id as any)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border-none cursor-pointer ${
+              filterCategory === tab.id
+                ? "bg-primary text-on-primary shadow-sm"
+                : "bg-surface-container-low text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {(() => {
+        const filteredStories = stories.filter(s => filterCategory === "ALL" || s.category === filterCategory);
+        if (filteredStories.length === 0) {
+          return <EmptyState icon="stars" title="No success stories" description="No success stories found in this category." />;
+        }
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredStories.map((story) => (
+              <div key={story._id} className="bg-surface rounded-2xl p-6 border border-outline-variant/35 shadow-sm hover:shadow-md transition-all flex flex-col justify-between hover-lift">
+                <div>
+                  <div className="flex items-center gap-4 mb-4">
+                    {story.imageUrl ? (
+                      <img
+                        src={resolveImageUrl(story.imageUrl)}
+                        alt={story.name}
+                        className="w-12 h-12 rounded-xl object-cover border border-outline-variant/50 shadow-sm shrink-0"
+                      />
+                    ) : (
+                      <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary font-display text-sm font-bold shrink-0">
+                        {story.name.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-bold text-base text-on-surface">{story.name}</h3>
+                      <p className="text-xs text-primary font-mono uppercase tracking-wider font-bold">{story.category === "ADMISSION" ? "Admissions Consulting" : "SAT Prep"}</p>
+                    </div>
                   </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-on-surface-variant"><strong className="text-on-surface">Score:</strong> {story.score}</p>
+                    <p className="text-sm text-on-surface-variant"><strong className="text-on-surface">Target Destination:</strong> {story.university}</p>
+                    {story.videoUrl && (
+                      <p className="text-sm text-primary font-semibold flex items-center gap-1">
+                        <Icon name="play_circle" className="text-[16px]" /> Has Video Testimonial
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm text-on-surface-variant italic leading-relaxed mt-4 bg-surface-container-low/55 p-3 rounded-lg border border-outline-variant/20 line-clamp-4">
+                    "{story.quote}"
+                  </p>
                 </div>
-                <div className="text-xs text-on-surface-variant flex items-center gap-1 mb-3">
-                  <Icon name="school" className="text-sm" /> {story.university}
-                </div>
-                <p className="text-sm text-on-surface italic leading-relaxed line-clamp-3 mb-4">"{story.quote}"</p>
-                <div className="flex gap-2 text-xs font-mono">
-                  {story.imageUrl && <Badge variant="info">Image</Badge>}
-                  {story.videoUrl && <Badge variant="accent">Video</Badge>}
+                <div className="flex gap-3 pt-4 border-t border-outline-variant/30 mt-4">
+                  <button onClick={() => openEditModal(story)} className="flex-1 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-sm font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer border-none">
+                    <Icon name="edit" className="text-[16px]" /> Edit
+                  </button>
+                  <button onClick={() => handleDelete(story._id)} className="flex-1 py-2 rounded-lg bg-error/10 hover:bg-error/20 text-error text-sm font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer border-none">
+                    <Icon name="delete" className="text-[16px]" /> Delete
+                  </button>
                 </div>
               </div>
-              <div className="flex gap-3 pt-4 border-t border-outline-variant/30 mt-4">
-                <button onClick={() => openEditModal(story)} className="flex-1 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-sm font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer">
-                  <Icon name="edit" className="text-[16px]" /> Edit
-                </button>
-                <button onClick={() => handleDelete(story._id)} className="flex-1 py-2 rounded-lg bg-error/10 hover:bg-error/20 text-error text-sm font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer">
-                  <Icon name="delete" className="text-[16px]" /> Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        );
+      })()}
 
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingStory ? "Edit Success Story" : "Add Success Story"} icon={editingStory ? "edit" : "add_box"}>
         {formError && (
@@ -285,7 +323,20 @@ function AdminSuccessStories() {
               />
             </div>
           </div>
-          <Input label="Video URL" type="url" value={formData.videoUrl} onChange={(e) => setFormData((p) => ({ ...p, videoUrl: e.target.value }))} placeholder="YouTube or MP4 URL" />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Video URL" type="url" value={formData.videoUrl} onChange={(e) => setFormData((p) => ({ ...p, videoUrl: e.target.value }))} placeholder="YouTube or MP4 URL" />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant font-body">Category *</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData((p) => ({ ...p, category: e.target.value as any }))}
+                className="w-full rounded-xl border-2 border-outline-variant/60 bg-surface px-4 py-2.5 text-sm text-on-surface outline-none transition-all focus:border-primary cursor-pointer h-[40px] leading-tight"
+              >
+                <option value="SAT">SAT Prep</option>
+                <option value="ADMISSION">College Admissions</option>
+              </select>
+            </div>
+          </div>
           <Textarea label="Quote *" value={formData.quote} onChange={(e) => setFormData((p) => ({ ...p, quote: e.target.value }))} required rows={3} placeholder="Student testimonial..." />
           <div className="flex gap-4 pt-4 border-t border-outline-variant/30">
             <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container-low text-sm font-semibold transition-colors cursor-pointer">Cancel</button>

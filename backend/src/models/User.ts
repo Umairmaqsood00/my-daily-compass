@@ -13,6 +13,12 @@ export interface IUser extends Document {
   status: "ACTIVE" | "SUSPENDED";
   resetToken?: string;
   resetTokenExpiry?: Date;
+  targetScore: number;
+  streakCount: number;
+  lastActiveDate: string | null;
+  dailyGoal: number;
+  dailyPracticeProgress: number;
+  leaderboardPoints: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,6 +64,12 @@ const UserSchema: Schema = new Schema(
     },
     resetToken: { type: String },
     resetTokenExpiry: { type: Date },
+    targetScore: { type: Number, default: 1400 },
+    streakCount: { type: Number, default: 0 },
+    lastActiveDate: { type: String, default: null },
+    dailyGoal: { type: Number, default: 10 },
+    dailyPracticeProgress: { type: Number, default: 0 },
+    leaderboardPoints: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

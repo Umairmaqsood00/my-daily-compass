@@ -503,6 +503,7 @@ function UniversityMatcherContent() {
   const [showResults, setShowResults] = useState(false);
   const [selectedUnisMap, setSelectedUnisMap] = useState<Record<string, any>>({});
   const [isApplying, setIsApplying] = useState(false);
+  const [selectedSheet, setSelectedSheet] = useState("ALL");
 
   const { data: UNIVERSITIES = [], isLoading } = useQuery({
     queryKey: ["universities"],
@@ -515,6 +516,11 @@ function UniversityMatcherContent() {
 
   const update = (key: string, val: any) => setProfile((p: any) => ({ ...p, [key]: val }));
 
+  const sheetNames = useMemo<string[]>(() => {
+    const names = new Set<string>((UNIVERSITIES as any[]).map((u: any) => u.sheetName as string).filter(Boolean));
+    return Array.from(names);
+  }, [UNIVERSITIES]);
+
   const results = useMemo(() => {
     if (!showResults || UNIVERSITIES.length === 0) return [];
     
@@ -523,10 +529,13 @@ function UniversityMatcherContent() {
       ? [...profile.preferredCountries.filter((c: string) => c !== "Other"), profile.customPreferredCountries].filter(Boolean)
       : profile.preferredCountries;
       
-    const filtered = UNIVERSITIES.filter((u: any) => activePreferred.includes(u.country));
+    let filtered = UNIVERSITIES.filter((u: any) => activePreferred.includes(u.country));
+    if (selectedSheet !== "ALL") {
+      filtered = filtered.filter((u: any) => u.sheetName === selectedSheet);
+    }
     return filtered.map((u: any) => scoreUniversity(u, profile))
       .sort((a: any, b: any) => b.score - a.score);
-  }, [showResults, profile, UNIVERSITIES]);
+  }, [showResults, profile, UNIVERSITIES, selectedSheet]);
 
   const toggleSelectUni = (uni: any) => {
     setSelectedUnisMap(prev => {
@@ -581,9 +590,26 @@ function UniversityMatcherContent() {
           <h1 className="text-3xl font-display font-extrabold text-primary mb-2">
             Your Matches, {profile.name.split(" ")[0]} 🎓
           </h1>
-          <p className="text-on-surface-variant mb-6 font-medium">
-            {results.length} universities matched &middot; <span className="text-green-600">{strongCount} strong</span> &middot; <span className="text-blue-600">{goodCount} good</span> &middot; <span className="text-orange-500">{reachCount} reach</span>
-          </p>
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <p className="text-on-surface-variant font-medium">
+              {results.length} universities matched &middot; <span className="text-green-600">{strongCount} strong</span> &middot; <span className="text-blue-600">{goodCount} good</span> &middot; <span className="text-orange-500">{reachCount} reach</span>
+            </p>
+            {sheetNames.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Data Sheet:</label>
+                <select
+                  value={selectedSheet}
+                  onChange={(e) => setSelectedSheet(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-outline-variant bg-surface text-xs font-semibold focus:border-accent outline-none cursor-pointer"
+                >
+                  <option value="ALL">All Sheets</option>
+                  {sheetNames.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-wrap gap-2 mb-8">
             {profile.preferredCountries.filter((c: string) => c !== "Other").map((c: string) => (

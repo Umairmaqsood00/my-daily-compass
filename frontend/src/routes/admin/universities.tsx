@@ -26,9 +26,11 @@ function AdminUniversities() {
     },
   });
 
+  const [customSheetName, setCustomSheetName] = useState("General");
+
   const syncMutation = useMutation({
-    mutationFn: async (data: any[]) => {
-      const res = await api.put("/api/universities/sync", { universities: data });
+    mutationFn: async ({ data, sheetName }: { data: any[]; sheetName: string }) => {
+      const res = await api.put("/api/universities/sync", { universities: data, sheetName });
       if (!res.success) throw new Error(res.error);
       return res.data;
     },
@@ -80,7 +82,7 @@ function AdminUniversities() {
           logo: row["Flag"] || row["Logo"] || row["logo"] || "🎓",
         }));
 
-        syncMutation.mutate(mappedData);
+        syncMutation.mutate({ data: mappedData, sheetName: customSheetName || sheetName });
       } catch (err) {
         alert("Error parsing spreadsheet. Make sure the format matches.");
         setIsUploading(false);
@@ -101,20 +103,32 @@ function AdminUniversities() {
           </p>
         </div>
         
-        <div className="relative">
-          <input 
-            type="file" 
-            accept=".xlsx, .xls, .csv" 
-            onChange={handleFileUpload} 
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            disabled={isUploading}
-          />
-          <button 
-            disabled={isUploading}
-            className="px-6 py-3 bg-accent text-on-primary font-bold rounded-xl shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:bg-accent/90 transition-colors pointer-events-none"
-          >
-            {isUploading ? "Syncing..." : "Upload Spreadsheet"}
-          </button>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant font-mono">Import Sheet Name</label>
+            <input
+              type="text"
+              value={customSheetName}
+              onChange={(e) => setCustomSheetName(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-outline-variant/60 bg-surface text-xs outline-none focus:border-primary max-w-[150px] font-semibold"
+              placeholder="Sheet Name"
+            />
+          </div>
+          <div className="relative mt-5">
+            <input 
+              type="file" 
+              accept=".xlsx, .xls, .csv" 
+              onChange={handleFileUpload} 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={isUploading}
+            />
+            <button 
+              disabled={isUploading}
+              className="px-5 py-2.5 bg-accent text-on-primary font-bold rounded-xl shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:bg-accent/90 transition-colors pointer-events-none text-xs"
+            >
+              {isUploading ? "Syncing..." : "Upload Spreadsheet"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -128,6 +142,7 @@ function AdminUniversities() {
                 <th className="px-6 py-4 font-bold">QS Rank</th>
                 <th className="px-6 py-4 font-bold">Tuition</th>
                 <th className="px-6 py-4 font-bold">Deadline</th>
+                <th className="px-6 py-4 font-bold">Sheet Name</th>
                 <th className="px-6 py-4 font-bold">Programs</th>
               </tr>
             </thead>
@@ -166,6 +181,9 @@ function AdminUniversities() {
                       <span className="px-2.5 py-1 bg-error/10 text-error rounded-lg text-xs font-semibold">
                         {uni.deadline}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap font-mono text-xs">
+                      {uni.sheetName || "General"}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">

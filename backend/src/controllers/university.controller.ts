@@ -13,19 +13,25 @@ export const getAllUniversities = async (req: Request, res: Response) => {
 
 export const syncUniversities = async (req: Request, res: Response) => {
   try {
-    const { universities } = req.body;
+    const { universities, sheetName = "General" } = req.body;
 
     if (!Array.isArray(universities)) {
       return res.status(400).json({ success: false, error: "Invalid data format. Expected an array of universities." });
     }
 
-    // Clear existing collection
-    await University.deleteMany({});
+    // Clear existing universities matching this sheetName
+    await University.deleteMany({ sheetName });
+
+    // Map each university to include sheetName
+    const universitiesWithSheet = universities.map((u) => ({
+      ...u,
+      sheetName,
+    }));
 
     // Insert new universities
-    const inserted = await University.insertMany(universities);
+    const inserted = await University.insertMany(universitiesWithSheet);
 
-    return res.status(200).json({ success: true, data: inserted, message: "Universities synced successfully." });
+    return res.status(200).json({ success: true, data: inserted, message: `Universities synced successfully for sheet "${sheetName}".` });
   } catch (error: any) {
     console.error("Sync Universities Error:", error);
     return res.status(500).json({ success: false, error: error.message || "Server Error", details: error.errors });

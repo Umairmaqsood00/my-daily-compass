@@ -17,11 +17,12 @@ export interface IUniversity extends Document {
   deadline: string;
   type: string;
   logo: string;
+  sheetName: string;
 }
 
 const universitySchema = new Schema<IUniversity>(
   {
-    uniId: { type: Number, required: true, unique: true },
+    uniId: { type: Number, required: true },
     name: { type: String, required: true },
     country: { type: String, required: true },
     city: { type: String, required: true },
@@ -37,8 +38,12 @@ const universitySchema = new Schema<IUniversity>(
     deadline: { type: String, required: true },
     type: { type: String, required: true },
     logo: { type: String, required: true },
+    sheetName: { type: String, default: "General", required: true },
   },
   { timestamps: true }
 );
+
+// Compound index to ensure uniqueness within a sheet
+universitySchema.index({ uniId: 1, sheetName: 1 }, { unique: true });
 
 export default mongoose.model<IUniversity>("University", universitySchema);

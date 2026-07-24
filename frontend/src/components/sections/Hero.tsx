@@ -25,7 +25,7 @@ const CollageSkeleton = () => (
     {/* Background Luxury Frame Layer */}
     <div className="absolute -inset-4 rounded-2xl border border-accent/15 -z-10 animate-pulse" />
     <div className="absolute -inset-2 rounded-2xl border border-accent/25 -z-10 translate-x-1.5 translate-y-1.5 animate-pulse" />
-    
+
     {/* Main Student Portrait Placeholder */}
     <div className="w-full aspect-[4/5] bg-surface-container-low rounded-xl border border-outline-variant/30 animate-pulse" />
 
@@ -66,7 +66,7 @@ export function Hero() {
       .then((res) => {
         if (res.success && res.feature) {
           const imgUrl = resolveHeroImageUrl(res.feature.imageUrl);
-          
+
           // Preload image before completing load state so it renders immediately
           const img = new Image();
           img.src = imgUrl;
@@ -100,7 +100,7 @@ export function Hero() {
 
       <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-16 px-6 lg:grid-cols-12">
         {/* Left Side: Elite Admissions Copy */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -111,9 +111,9 @@ export function Hero() {
             The Gold Standard of Ivy League Admissions
           </span>
 
-          <h1 className="font-display text-5xl font-extrabold leading-[1.08] tracking-[-0.01em] text-on-surface sm:text-6xl lg:text-7xl">
+          <h1 className="font-display text-5xl font-bold leading-[1.08] tracking-[-0.01em] text-on-surface sm:text-6xl lg:text-7xl">
             Elevate Your <br />
-            <span className="italic font-normal text-accent font-display">Academic Destiny.</span>
+            <span className="text-accent font-display font-bold">Academic Destiny</span>
           </h1>
 
           <p className="max-w-xl text-lg md:text-xl text-on-surface-variant font-body font-light leading-relaxed">
@@ -124,7 +124,7 @@ export function Hero() {
             {user?.role === "ADMIN" ? (
               <Link
                 to="/admin"
-                className="btn-shimmer inline-flex items-center gap-3 rounded-xl bg-primary px-8 py-4 text-xs font-bold uppercase tracking-[0.1em] text-on-primary shark-shadow hover:bg-accent transition-all duration-300"
+                className="btn-shimmer inline-flex items-center gap-3 rounded-xl bg-primary px-8 py-4 text-sm font-bold uppercase tracking-[0.1em] text-on-primary shark-shadow hover:bg-accent transition-all duration-300"
               >
                 Go to the dashboard <Icon name="dashboard" className="text-[16px]" />
               </Link>
@@ -132,13 +132,13 @@ export function Hero() {
               <>
                 <Link
                   to="/sat"
-                  className="btn-shimmer inline-flex items-center gap-3 rounded-xl bg-primary px-8 py-4 text-xs font-bold uppercase tracking-[0.1em] text-on-primary shark-shadow hover:bg-accent transition-all duration-300"
+                  className="btn-shimmer inline-flex items-center gap-3 rounded-xl bg-primary px-8 py-4 text-sm font-bold uppercase tracking-[0.1em] text-on-primary shark-shadow hover:bg-accent transition-all duration-300"
                 >
                   Book Class <Icon name="arrow_forward" className="text-[16px]" />
                 </Link>
                 <Link
                   to={user ? "/sat" : "/auth/login"}
-                  className="inline-flex items-center gap-3 rounded-xl border border-outline-variant bg-surface px-8 py-4 text-xs font-bold uppercase tracking-[0.1em] text-on-surface hover:bg-surface-container-low transition-all duration-300 group cursor-pointer"
+                  className="inline-flex items-center gap-3 rounded-xl border border-outline-variant bg-surface px-8 py-4 text-sm font-bold uppercase tracking-[0.1em] text-on-surface hover:bg-surface-container-low transition-all duration-300 group cursor-pointer"
                 >
                   <Icon name="play_circle" className="text-[16px] text-accent group-hover:scale-110 transition-transform" /> Free Trial
                 </Link>
@@ -155,7 +155,7 @@ export function Hero() {
           {isLoading || !feature ? (
             <CollageSkeleton />
           ) : (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
@@ -182,7 +182,7 @@ export function Hero() {
               />
 
               {/* Floating Badge 1: Stanford Acceptance */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6, duration: 0.6 }}
@@ -202,7 +202,7 @@ export function Hero() {
               </motion.div>
 
               {/* Floating Badge 2: SAT Score card */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.8, duration: 0.6 }}

@@ -11,6 +11,8 @@ const navItems = [
   { to: "/dashboard/sat-tests", label: "Digital SAT Practice Tests", icon: "school" },
   { to: "/dashboard/history", label: "Test History", icon: "history" },
   { to: "/dashboard/analytics", label: "Analytics", icon: "insights" },
+  { to: "/dashboard/leaderboard", label: "Leaderboard", icon: "emoji_events" },
+  { to: "/dashboard/study-materials", label: "Study Materials", icon: "menu_book" },
 ];
 
 export function StudentLayout({ children, activeItem }: { children: ReactNode; activeItem: string }) {

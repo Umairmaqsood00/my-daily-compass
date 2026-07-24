@@ -22,8 +22,10 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
+import { Route as DashboardStudyMaterialsRouteImport } from './routes/dashboard/study-materials'
 import { Route as DashboardSatTestsRouteImport } from './routes/dashboard/sat-tests'
 import { Route as DashboardPracticeRouteImport } from './routes/dashboard/practice'
+import { Route as DashboardLeaderboardRouteImport } from './routes/dashboard/leaderboard'
 import { Route as DashboardHistoryRouteImport } from './routes/dashboard/history'
 import { Route as DashboardEssaysRouteImport } from './routes/dashboard/essays'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
@@ -36,6 +38,7 @@ import { Route as AdminUploadsRouteImport } from './routes/admin/uploads'
 import { Route as AdminUniversitiesRouteImport } from './routes/admin/universities'
 import { Route as AdminTestsRouteImport } from './routes/admin/tests'
 import { Route as AdminSuccessStoriesRouteImport } from './routes/admin/success-stories'
+import { Route as AdminStudyMaterialsRouteImport } from './routes/admin/study-materials'
 import { Route as AdminQuestionsRouteImport } from './routes/admin/questions'
 import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
 import { Route as AdminEssaysRouteImport } from './routes/admin/essays'
@@ -110,6 +113,11 @@ const PaymentCancelRoute = PaymentCancelRouteImport.update({
   path: '/payment/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardStudyMaterialsRoute = DashboardStudyMaterialsRouteImport.update({
+  id: '/study-materials',
+  path: '/study-materials',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardSatTestsRoute = DashboardSatTestsRouteImport.update({
   id: '/sat-tests',
   path: '/sat-tests',
@@ -118,6 +126,11 @@ const DashboardSatTestsRoute = DashboardSatTestsRouteImport.update({
 const DashboardPracticeRoute = DashboardPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardLeaderboardRoute = DashboardLeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardHistoryRoute = DashboardHistoryRouteImport.update({
@@ -180,6 +193,11 @@ const AdminSuccessStoriesRoute = AdminSuccessStoriesRouteImport.update({
   path: '/admin/success-stories',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminStudyMaterialsRoute = AdminStudyMaterialsRouteImport.update({
+  id: '/admin/study-materials',
+  path: '/admin/study-materials',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
   id: '/admin/questions',
   path: '/admin/questions',
@@ -239,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/admin/essays': typeof AdminEssaysRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/study-materials': typeof AdminStudyMaterialsRoute
   '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
   '/admin/universities': typeof AdminUniversitiesRoute
@@ -251,8 +270,10 @@ export interface FileRoutesByFullPath {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/essays': typeof DashboardEssaysRoute
   '/dashboard/history': typeof DashboardHistoryRoute
+  '/dashboard/leaderboard': typeof DashboardLeaderboardRoute
   '/dashboard/practice': typeof DashboardPracticeRoute
   '/dashboard/sat-tests': typeof DashboardSatTestsRoute
+  '/dashboard/study-materials': typeof DashboardStudyMaterialsRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
@@ -275,6 +296,7 @@ export interface FileRoutesByTo {
   '/admin/essays': typeof AdminEssaysRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/study-materials': typeof AdminStudyMaterialsRoute
   '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
   '/admin/universities': typeof AdminUniversitiesRoute
@@ -287,8 +309,10 @@ export interface FileRoutesByTo {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/essays': typeof DashboardEssaysRoute
   '/dashboard/history': typeof DashboardHistoryRoute
+  '/dashboard/leaderboard': typeof DashboardLeaderboardRoute
   '/dashboard/practice': typeof DashboardPracticeRoute
   '/dashboard/sat-tests': typeof DashboardSatTestsRoute
+  '/dashboard/study-materials': typeof DashboardStudyMaterialsRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
@@ -313,6 +337,7 @@ export interface FileRoutesById {
   '/admin/essays': typeof AdminEssaysRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/study-materials': typeof AdminStudyMaterialsRoute
   '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
   '/admin/universities': typeof AdminUniversitiesRoute
@@ -325,8 +350,10 @@ export interface FileRoutesById {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/essays': typeof DashboardEssaysRoute
   '/dashboard/history': typeof DashboardHistoryRoute
+  '/dashboard/leaderboard': typeof DashboardLeaderboardRoute
   '/dashboard/practice': typeof DashboardPracticeRoute
   '/dashboard/sat-tests': typeof DashboardSatTestsRoute
+  '/dashboard/study-materials': typeof DashboardStudyMaterialsRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
@@ -352,6 +379,7 @@ export interface FileRouteTypes {
     | '/admin/essays'
     | '/admin/payments'
     | '/admin/questions'
+    | '/admin/study-materials'
     | '/admin/success-stories'
     | '/admin/tests'
     | '/admin/universities'
@@ -364,8 +392,10 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/essays'
     | '/dashboard/history'
+    | '/dashboard/leaderboard'
     | '/dashboard/practice'
     | '/dashboard/sat-tests'
+    | '/dashboard/study-materials'
     | '/payment/cancel'
     | '/payment/success'
     | '/admin/'
@@ -388,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/essays'
     | '/admin/payments'
     | '/admin/questions'
+    | '/admin/study-materials'
     | '/admin/success-stories'
     | '/admin/tests'
     | '/admin/universities'
@@ -400,8 +431,10 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/essays'
     | '/dashboard/history'
+    | '/dashboard/leaderboard'
     | '/dashboard/practice'
     | '/dashboard/sat-tests'
+    | '/dashboard/study-materials'
     | '/payment/cancel'
     | '/payment/success'
     | '/admin'
@@ -425,6 +458,7 @@ export interface FileRouteTypes {
     | '/admin/essays'
     | '/admin/payments'
     | '/admin/questions'
+    | '/admin/study-materials'
     | '/admin/success-stories'
     | '/admin/tests'
     | '/admin/universities'
@@ -437,8 +471,10 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/essays'
     | '/dashboard/history'
+    | '/dashboard/leaderboard'
     | '/dashboard/practice'
     | '/dashboard/sat-tests'
+    | '/dashboard/study-materials'
     | '/payment/cancel'
     | '/payment/success'
     | '/admin/'
@@ -463,6 +499,7 @@ export interface RootRouteChildren {
   AdminEssaysRoute: typeof AdminEssaysRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminQuestionsRoute: typeof AdminQuestionsRoute
+  AdminStudyMaterialsRoute: typeof AdminStudyMaterialsRoute
   AdminSuccessStoriesRoute: typeof AdminSuccessStoriesRoute
   AdminTestsRoute: typeof AdminTestsRoute
   AdminUniversitiesRoute: typeof AdminUniversitiesRoute
@@ -571,6 +608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/study-materials': {
+      id: '/dashboard/study-materials'
+      path: '/study-materials'
+      fullPath: '/dashboard/study-materials'
+      preLoaderRoute: typeof DashboardStudyMaterialsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/sat-tests': {
       id: '/dashboard/sat-tests'
       path: '/sat-tests'
@@ -583,6 +627,13 @@ declare module '@tanstack/react-router' {
       path: '/practice'
       fullPath: '/dashboard/practice'
       preLoaderRoute: typeof DashboardPracticeRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/leaderboard': {
+      id: '/dashboard/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/dashboard/leaderboard'
+      preLoaderRoute: typeof DashboardLeaderboardRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/history': {
@@ -669,6 +720,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSuccessStoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/study-materials': {
+      id: '/admin/study-materials'
+      path: '/admin/study-materials'
+      fullPath: '/admin/study-materials'
+      preLoaderRoute: typeof AdminStudyMaterialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/questions': {
       id: '/admin/questions'
       path: '/admin/questions'
@@ -732,8 +790,10 @@ interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
   DashboardEssaysRoute: typeof DashboardEssaysRoute
   DashboardHistoryRoute: typeof DashboardHistoryRoute
+  DashboardLeaderboardRoute: typeof DashboardLeaderboardRoute
   DashboardPracticeRoute: typeof DashboardPracticeRoute
   DashboardSatTestsRoute: typeof DashboardSatTestsRoute
+  DashboardStudyMaterialsRoute: typeof DashboardStudyMaterialsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardSatResultAttemptIdRoute: typeof DashboardSatResultAttemptIdRoute
   DashboardSatRunnerAttemptIdRoute: typeof DashboardSatRunnerAttemptIdRoute
@@ -743,8 +803,10 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
   DashboardEssaysRoute: DashboardEssaysRoute,
   DashboardHistoryRoute: DashboardHistoryRoute,
+  DashboardLeaderboardRoute: DashboardLeaderboardRoute,
   DashboardPracticeRoute: DashboardPracticeRoute,
   DashboardSatTestsRoute: DashboardSatTestsRoute,
+  DashboardStudyMaterialsRoute: DashboardStudyMaterialsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardSatResultAttemptIdRoute: DashboardSatResultAttemptIdRoute,
   DashboardSatRunnerAttemptIdRoute: DashboardSatRunnerAttemptIdRoute,
@@ -769,6 +831,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminEssaysRoute: AdminEssaysRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminQuestionsRoute: AdminQuestionsRoute,
+  AdminStudyMaterialsRoute: AdminStudyMaterialsRoute,
   AdminSuccessStoriesRoute: AdminSuccessStoriesRoute,
   AdminTestsRoute: AdminTestsRoute,
   AdminUniversitiesRoute: AdminUniversitiesRoute,

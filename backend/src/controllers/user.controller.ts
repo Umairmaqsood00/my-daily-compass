@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import User from "../models/User";
 import PaymentProof from "../models/PaymentProof";
 import { AuthRequest } from "../middleware/auth.middleware";
@@ -9,6 +10,10 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
 
     if (!process.env.DATABASE_URL) {
       return res.status(200).json({ success: true, user: { ...req.user, hasPendingPayment: false } });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.user.userId)) {
+      return res.status(401).json({ success: false, error: "Invalid user session token" });
     }
 
     const user = await User.findById(req.user.userId).select("-password");
@@ -31,6 +36,12 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
         region: user.region,
         subscription: user.subscription,
         status: user.status,
+        targetScore: user.targetScore ?? 1400,
+        streakCount: user.streakCount ?? 0,
+        lastActiveDate: user.lastActiveDate,
+        dailyGoal: user.dailyGoal ?? 10,
+        dailyPracticeProgress: user.dailyPracticeProgress ?? 0,
+        leaderboardPoints: user.leaderboardPoints ?? 0,
         hasPendingPayment
       }
     });
@@ -38,6 +49,48 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+export const updateUserSettings = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, error: "Unauthorized" });
+    
+    if (!mongoose.Types.ObjectId.isValid(req.user.userId)) {
+      return res.status(401).json({ success: false, error: "Invalid user session token" });
+    }
+
+    const { targetScore, dailyGoal } = req.body;
+
+    const updateData: any = {};
+    if (typeof targetScore === "number") updateData.targetScore = targetScore;
+    if (typeof dailyGoal === "number") updateData.dailyGoal = dailyGoal;
+
+    const user = await User.findByIdAndUpdate(req.user.userId, updateData, { new: true }).select("-password");
+    if (!user) return res.status(404).json({ success: false, error: "User not found" });
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        country: user.country,
+        region: user.region,
+        subscription: user.subscription,
+        status: user.status,
+        targetScore: user.targetScore,
+        streakCount: user.streakCount,
+        lastActiveDate: user.lastActiveDate,
+        dailyGoal: user.dailyGoal,
+        dailyPracticeProgress: user.dailyPracticeProgress,
+        leaderboardPoints: user.leaderboardPoints
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 
 export const getUsers = async (req: Request, res: Response) => {
   try {

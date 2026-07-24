@@ -118,7 +118,7 @@ export function Testimonials() {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-100px" }}
-          className="mt-20 grid gap-8 md:grid-cols-3"
+          className="mt-20 grid gap-8 md:grid-cols-3 items-start"
         >
           {isLoading ? (
             <>
@@ -175,7 +175,7 @@ export function Testimonials() {
                   <div className="h-[1px] w-full bg-outline-variant/30 my-4" />
   
                   {/* Testimonial Quote */}
-                  <blockquote className="text-on-surface/90 leading-relaxed text-[16px] italic font-medium">
+                  <blockquote className="text-on-surface/90 leading-relaxed text-[16px] italic font-normal">
                     "{t.quote}"
                   </blockquote>
                 </div>

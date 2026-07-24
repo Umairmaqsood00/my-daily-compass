@@ -123,7 +123,7 @@ function SuccessStories() {
               </button>
             </div>
             
-            <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3 items-start">
               {isLoading ? (
                 <>
                   <TestimonialSkeleton />
@@ -177,7 +177,7 @@ function SuccessStories() {
                       <div className="h-[1px] w-full bg-outline-variant/30 my-4" />
   
                       {/* Testimonial Quote */}
-                      <blockquote className="text-on-surface/90 leading-relaxed text-[16px] italic font-medium">
+                      <blockquote className="text-on-surface/90 leading-relaxed text-[16px] italic font-normal">
                         "{item.quote}"
                       </blockquote>
                     </div>

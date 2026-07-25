@@ -39,14 +39,17 @@ import { Route as AdminUniversitiesRouteImport } from './routes/admin/universiti
 import { Route as AdminTestsRouteImport } from './routes/admin/tests'
 import { Route as AdminSuccessStoriesRouteImport } from './routes/admin/success-stories'
 import { Route as AdminStudyMaterialsRouteImport } from './routes/admin/study-materials'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminQuestionsRouteImport } from './routes/admin/questions'
 import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
 import { Route as AdminEssaysRouteImport } from './routes/admin/essays'
 import { Route as AdminContactRequestsRouteImport } from './routes/admin/contact-requests'
 import { Route as AdminConsultingRouteImport } from './routes/admin/consulting'
+import { Route as AdminReportsIndexRouteImport } from './routes/admin/reports.index'
 import { Route as DashboardSatRunnerAttemptIdRouteImport } from './routes/dashboard/sat-runner.$attemptId'
 import { Route as DashboardSatResultAttemptIdRouteImport } from './routes/dashboard/sat-result.$attemptId'
 import { Route as AdminReviewUploadUploadIdRouteImport } from './routes/admin/review-upload.$uploadId'
+import { Route as AdminReportsIdRouteImport } from './routes/admin/reports.$id'
 
 const UniversityMatcherRoute = UniversityMatcherRouteImport.update({
   id: '/university-matcher',
@@ -198,6 +201,11 @@ const AdminStudyMaterialsRoute = AdminStudyMaterialsRouteImport.update({
   path: '/admin/study-materials',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
   id: '/admin/questions',
   path: '/admin/questions',
@@ -223,6 +231,11 @@ const AdminConsultingRoute = AdminConsultingRouteImport.update({
   path: '/admin/consulting',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminReportsIndexRoute = AdminReportsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminReportsRoute,
+} as any)
 const DashboardSatRunnerAttemptIdRoute =
   DashboardSatRunnerAttemptIdRouteImport.update({
     id: '/sat-runner/$attemptId',
@@ -241,6 +254,11 @@ const AdminReviewUploadUploadIdRoute =
     path: '/admin/review-upload/$uploadId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminReportsIdRoute = AdminReportsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminReportsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -257,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/admin/essays': typeof AdminEssaysRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRouteWithChildren
   '/admin/study-materials': typeof AdminStudyMaterialsRoute
   '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
@@ -278,9 +297,11 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/admin/reports/$id': typeof AdminReportsIdRoute
   '/admin/review-upload/$uploadId': typeof AdminReviewUploadUploadIdRoute
   '/dashboard/sat-result/$attemptId': typeof DashboardSatResultAttemptIdRoute
   '/dashboard/sat-runner/$attemptId': typeof DashboardSatRunnerAttemptIdRoute
+  '/admin/reports/': typeof AdminReportsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -317,9 +338,11 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/admin/reports/$id': typeof AdminReportsIdRoute
   '/admin/review-upload/$uploadId': typeof AdminReviewUploadUploadIdRoute
   '/dashboard/sat-result/$attemptId': typeof DashboardSatResultAttemptIdRoute
   '/dashboard/sat-runner/$attemptId': typeof DashboardSatRunnerAttemptIdRoute
+  '/admin/reports': typeof AdminReportsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -337,6 +360,7 @@ export interface FileRoutesById {
   '/admin/essays': typeof AdminEssaysRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRouteWithChildren
   '/admin/study-materials': typeof AdminStudyMaterialsRoute
   '/admin/success-stories': typeof AdminSuccessStoriesRoute
   '/admin/tests': typeof AdminTestsRoute
@@ -358,9 +382,11 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/admin/reports/$id': typeof AdminReportsIdRoute
   '/admin/review-upload/$uploadId': typeof AdminReviewUploadUploadIdRoute
   '/dashboard/sat-result/$attemptId': typeof DashboardSatResultAttemptIdRoute
   '/dashboard/sat-runner/$attemptId': typeof DashboardSatRunnerAttemptIdRoute
+  '/admin/reports/': typeof AdminReportsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -379,6 +405,7 @@ export interface FileRouteTypes {
     | '/admin/essays'
     | '/admin/payments'
     | '/admin/questions'
+    | '/admin/reports'
     | '/admin/study-materials'
     | '/admin/success-stories'
     | '/admin/tests'
@@ -400,9 +427,11 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin/'
     | '/dashboard/'
+    | '/admin/reports/$id'
     | '/admin/review-upload/$uploadId'
     | '/dashboard/sat-result/$attemptId'
     | '/dashboard/sat-runner/$attemptId'
+    | '/admin/reports/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -439,9 +468,11 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin'
     | '/dashboard'
+    | '/admin/reports/$id'
     | '/admin/review-upload/$uploadId'
     | '/dashboard/sat-result/$attemptId'
     | '/dashboard/sat-runner/$attemptId'
+    | '/admin/reports'
   id:
     | '__root__'
     | '/'
@@ -458,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin/essays'
     | '/admin/payments'
     | '/admin/questions'
+    | '/admin/reports'
     | '/admin/study-materials'
     | '/admin/success-stories'
     | '/admin/tests'
@@ -479,9 +511,11 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin/'
     | '/dashboard/'
+    | '/admin/reports/$id'
     | '/admin/review-upload/$uploadId'
     | '/dashboard/sat-result/$attemptId'
     | '/dashboard/sat-runner/$attemptId'
+    | '/admin/reports/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -499,6 +533,7 @@ export interface RootRouteChildren {
   AdminEssaysRoute: typeof AdminEssaysRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminQuestionsRoute: typeof AdminQuestionsRoute
+  AdminReportsRoute: typeof AdminReportsRouteWithChildren
   AdminStudyMaterialsRoute: typeof AdminStudyMaterialsRoute
   AdminSuccessStoriesRoute: typeof AdminSuccessStoriesRoute
   AdminTestsRoute: typeof AdminTestsRoute
@@ -727,6 +762,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStudyMaterialsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/questions': {
       id: '/admin/questions'
       path: '/admin/questions'
@@ -762,6 +804,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConsultingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/reports/': {
+      id: '/admin/reports/'
+      path: '/'
+      fullPath: '/admin/reports/'
+      preLoaderRoute: typeof AdminReportsIndexRouteImport
+      parentRoute: typeof AdminReportsRoute
+    }
     '/dashboard/sat-runner/$attemptId': {
       id: '/dashboard/sat-runner/$attemptId'
       path: '/sat-runner/$attemptId'
@@ -782,6 +831,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/review-upload/$uploadId'
       preLoaderRoute: typeof AdminReviewUploadUploadIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/reports/$id': {
+      id: '/admin/reports/$id'
+      path: '/$id'
+      fullPath: '/admin/reports/$id'
+      preLoaderRoute: typeof AdminReportsIdRouteImport
+      parentRoute: typeof AdminReportsRoute
     }
   }
 }
@@ -816,6 +872,20 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
   DashboardRouteChildren,
 )
 
+interface AdminReportsRouteChildren {
+  AdminReportsIdRoute: typeof AdminReportsIdRoute
+  AdminReportsIndexRoute: typeof AdminReportsIndexRoute
+}
+
+const AdminReportsRouteChildren: AdminReportsRouteChildren = {
+  AdminReportsIdRoute: AdminReportsIdRoute,
+  AdminReportsIndexRoute: AdminReportsIndexRoute,
+}
+
+const AdminReportsRouteWithChildren = AdminReportsRoute._addFileChildren(
+  AdminReportsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookingRoute: BookingRoute,
@@ -831,6 +901,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminEssaysRoute: AdminEssaysRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminQuestionsRoute: AdminQuestionsRoute,
+  AdminReportsRoute: AdminReportsRouteWithChildren,
   AdminStudyMaterialsRoute: AdminStudyMaterialsRoute,
   AdminSuccessStoriesRoute: AdminSuccessStoriesRoute,
   AdminTestsRoute: AdminTestsRoute,

@@ -1,8 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { Header } from "./Header";
 import { useAuth } from "../../hooks/useAuth";
 import { Icon } from "../common/Icon";
+import { api } from "../../services/api";
 
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: "dashboard" },
@@ -17,10 +18,20 @@ const navItems = [
   { to: "/admin/consulting", label: "Consulting", icon: "account_balance" },
   { to: "/admin/universities", label: "Universities", icon: "school" },
   { to: "/admin/study-materials", label: "Study Materials", icon: "menu_book" },
+  { to: "/admin/reports", label: "Reported Issues", icon: "report_problem" },
 ];
 
 export function AdminLayout({ children, activeItem }: { children: ReactNode; activeItem: string }) {
   const { user, isLoading } = useAuth();
+  const [reportCount, setReportCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.role === "ADMIN") {
+      api.get("/api/reports/count").then((res) => {
+        if (res.success) setReportCount(res.count);
+      }).catch(() => {});
+    }
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -47,14 +58,21 @@ export function AdminLayout({ children, activeItem }: { children: ReactNode; act
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm transition-colors ${
                   activeItem === item.to
                     ? "bg-primary/10 text-primary font-semibold"
                     : "hover:bg-surface-container-low text-on-surface-variant"
                 }`}
               >
-                <Icon name={item.icon} className="text-[20px]" />
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <Icon name={item.icon} className="text-[20px]" />
+                  {item.label}
+                </div>
+                {item.to === "/admin/reports" && reportCount > 0 && (
+                  <span className="bg-error text-on-error text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    {reportCount}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>

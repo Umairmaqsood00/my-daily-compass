@@ -4,6 +4,8 @@ import Question from "../models/Question";
 import User from "../models/User";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { checkAnswerCorrectness } from "../utils/grading";
+import SATTest from "../models/SATTest";
+import SATTestAttempt from "../models/SATTestAttempt";
 
 export const submitPracticeAnswer = async (req: AuthRequest, res: Response) => {
   try {
@@ -103,5 +105,111 @@ export const getPracticeHistory = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const createCustomTest = async (req: AuthRequest, res: Response) => {
+  try {
+    const studentId = req.user?.userId;
+    const { subject, difficulties, categories } = req.body;
+
+    if (!studentId || !subject) {
+      return res.status(400).json({ success: false, error: "Missing required fields" });
+    }
+
+    const totalNeeded = subject === "READING_WRITING" ? 54 : 44;
+    const timeLimitMinutes = subject === "READING_WRITING" ? 32 : 35;
+
+    const matchCriteria: any = { section: subject };
+    if (difficulties && difficulties.length > 0) {
+      matchCriteria.difficulty = { $in: difficulties };
+    }
+    if (categories && categories.length > 0) {
+      matchCriteria.category = { $in: categories };
+    }
+
+    let questions = await Question.aggregate([
+      { $match: matchCriteria },
+      { $sample: { size: totalNeeded } },
+    ]);
+
+    if (questions.length < totalNeeded) {
+      const existingIds = questions.map((q: any) => q._id);
+      const remaining = totalNeeded - questions.length;
+      
+      const fallbackQuestions = await Question.aggregate([
+        { $match: { section: subject, _id: { $nin: existingIds } } },
+        { $sample: { size: remaining } },
+      ]);
+      
+      questions = [...questions, ...fallbackQuestions];
+    }
+
+    if (questions.length === 0) {
+      return res.status(400).json({ success: false, error: "No questions found for this subject." });
+    }
+
+    const actualModSize = Math.floor(questions.length / 2);
+    
+    const customTest = await SATTest.create({
+      title: `Custom Practice Test - ${new Date().toLocaleDateString()}`,
+      description: "User generated custom practice test.",
+      year: 9999,
+      testNumber: Math.floor(Math.random() * 1000000),
+      isAdaptive: false,
+      breakDurationMinutes: 0,
+      isActive: false,
+      accessLevel: "FREE",
+      createdBy: studentId,
+      modules: [
+        {
+          name: "Module 1",
+          section: subject,
+          moduleNumber: 1,
+          questions: questions.slice(0, actualModSize).map((q: any) => q._id),
+          timeLimitMinutes: timeLimitMinutes,
+        },
+        {
+          name: "Module 2",
+          section: subject,
+          moduleNumber: 2,
+          questions: questions.slice(actualModSize, actualModSize * 2).map((q: any) => q._id),
+          timeLimitMinutes: timeLimitMinutes,
+        }
+      ]
+    });
+
+    const attempt = await SATTestAttempt.create({
+      student: studentId,
+      test: customTest._id,
+      moduleAttempts: [
+        {
+          moduleIndex: 0,
+          answers: customTest.modules[0].questions.map(qId => ({
+            question: qId,
+            selectedAnswer: null,
+            isCorrect: false,
+            markedForReview: false,
+            timeSpent: 0
+          }))
+        },
+        {
+          moduleIndex: 1,
+          answers: customTest.modules[1].questions.map(qId => ({
+            question: qId,
+            selectedAnswer: null,
+            isCorrect: false,
+            markedForReview: false,
+            timeSpent: 0
+          }))
+        }
+      ],
+      status: "IN_PROGRESS"
+    });
+
+    return res.status(201).json({ success: true, attemptId: attempt._id });
+  } catch (error: any) {
+    console.error("Create Custom Test Error:", error);
+    return res.status(500).json({ success: false, error: "Failed to generate custom test." });
   }
 };

@@ -5,6 +5,7 @@ import { Badge } from "../../components/ui/Badge";
 import { api } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { SecurityWrapper } from "../../components/common/SecurityWrapper";
+import { ReportIssueModal } from "../../components/common/ReportIssueModal";
 import type { SATTest, SATModule, Question } from "../../types";
 
 export const Route = createFileRoute("/dashboard/sat-runner/$attemptId")({
@@ -79,6 +80,7 @@ function SATRunner() {
   const [showDirectionsModal, setShowDirectionsModal] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showReferenceModal, setShowReferenceModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load attempt + test on mount
@@ -784,16 +786,26 @@ function SATRunner() {
                       <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question</span>
                     </div>
 
-                    <button
-                      onClick={() => toggleReview(q._id)}
-                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
-                          ? "bg-accent text-primary"
-                          : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-                        }`}
-                    >
-                      <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
-                      <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleReview(q._id)}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
+                            ? "bg-accent text-primary"
+                            : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                          }`}
+                      >
+                        <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
+                        <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
+                      </button>
+                      <button
+                        onClick={() => setShowReportModal(true)}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                        title="Report Issue"
+                      >
+                        <Icon name="report" className="text-[14px]" />
+                        <span>Report</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
                     {rwSplit.prompt && (
@@ -853,16 +865,26 @@ function SATRunner() {
                       <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Answer Choices</span>
                     </div>
 
-                    <button
-                      onClick={() => toggleReview(q._id)}
-                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
-                          ? "bg-accent text-primary"
-                          : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-                        }`}
-                    >
-                      <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
-                      <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleReview(q._id)}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentAnswer?.markedForReview
+                            ? "bg-accent text-primary"
+                            : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                          }`}
+                      >
+                        <Icon name={currentAnswer?.markedForReview ? "flag" : "outlined_flag"} className="text-[14px]" />
+                        <span>{currentAnswer?.markedForReview ? "Flagged" : "Flag"}</span>
+                      </button>
+                      <button
+                        onClick={() => setShowReportModal(true)}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                        title="Report Issue"
+                      >
+                        <Icon name="report" className="text-[14px]" />
+                        <span>Report</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
                     {q.options && q.options.length > 0 ? (
@@ -1053,6 +1075,16 @@ function SATRunner() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Report Issue Modal */}
+      {showReportModal && q && (
+        <ReportIssueModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          questionId={q._id}
+          testContext={attemptId}
+        />
       )}
       </div>
     </SecurityWrapper>

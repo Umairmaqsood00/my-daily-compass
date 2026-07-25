@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, ReactNode } from "react";
 import { StudentLayout } from "../../components/layout/StudentLayout";
 import { Badge } from "../../components/ui/Badge";
@@ -9,6 +9,7 @@ import { ZoomableImage } from "../../components/ui/ZoomableImage";
 import { api } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { SecurityWrapper } from "../../components/common/SecurityWrapper";
+import { ReportIssueModal } from "../../components/common/ReportIssueModal";
 import type { Question, QuestionCategory } from "../../types";
 
 export const Route = createFileRoute("/dashboard/practice")({
@@ -68,10 +69,19 @@ function Practice() {
   const [difficulty, setDifficulty] = useState("");
   const [category, setCategory] = useState("");
 
+  // Custom Test Mode State
+  const [activeTab, setActiveTab] = useState<"PRACTICE" | "CUSTOM_TEST">("PRACTICE");
+  const [customSubject, setCustomSubject] = useState<"READING_WRITING" | "MATH">("READING_WRITING");
+  const [customDifficulties, setCustomDifficulties] = useState<string[]>([]);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [isGeneratingTest, setIsGeneratingTest] = useState(false);
+  const navigate = useNavigate();
+
   // Practice Mode
   const [isPracticeMode, setIsPracticeMode] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showReferenceModal, setShowReferenceModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     api.get("/api/categories").then((res) => {
@@ -147,6 +157,26 @@ function Practice() {
   useEffect(() => {
     fetchQuestions();
   }, [section, difficulty, category]);
+
+  const handleGenerateCustomTest = async () => {
+    setIsGeneratingTest(true);
+    try {
+      const res = await api.post("/api/practice/custom-test", {
+        subject: customSubject,
+        difficulties: customDifficulties,
+        categories: customCategories,
+      });
+      if (res.success && res.attemptId) {
+        navigate({ to: `/dashboard/sat-runner/${res.attemptId}` });
+      } else {
+        alert(res.error || "Failed to generate custom test.");
+      }
+    } catch (err: any) {
+      alert("Failed to generate custom test. Please try again.");
+    } finally {
+      setIsGeneratingTest(false);
+    }
+  };
 
   const handleSubmitAnswer = async () => {
     if (!selectedAnswer || !questions[currentIdx]) return;
@@ -662,9 +692,19 @@ function Practice() {
                   </span>
                   <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question {currentIdx + 1} of {questions.length}</span>
                 </div>
-                <Badge variant={q.difficulty === "EASY" ? "success" : q.difficulty === "MEDIUM" ? "warning" : "error"}>
-                  {q.difficulty}
-                </Badge>
+                <div className="flex items-center gap-3">
+                  <Badge variant={q.difficulty === "EASY" ? "success" : q.difficulty === "MEDIUM" ? "warning" : "error"}>
+                    {q.difficulty}
+                  </Badge>
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-outline-variant hover:bg-surface-container-high text-on-surface-variant transition-colors text-xs font-bold cursor-pointer"
+                    title="Report Issue"
+                  >
+                    <Icon name="flag" className="text-[14px]" />
+                    <span>Report</span>
+                  </button>
+                </div>
               </div>
 
               {/* Scrollable Body */}
@@ -785,6 +825,16 @@ function Practice() {
             </div>
           </div>
         </div>
+
+        {/* Report Issue Modal */}
+        {showReportModal && q && (
+          <ReportIssueModal
+            isOpen={showReportModal}
+            onClose={() => setShowReportModal(false)}
+            questionId={q._id}
+            testContext="PRACTICE"
+          />
+        )}
       </div>
     </SecurityWrapper>
   );
@@ -819,7 +869,30 @@ function Practice() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 w-full items-center">
+      <div className="flex items-center justify-center mb-8">
+        <div className="flex bg-surface-container-low p-1.5 rounded-2xl shark-shadow shrink-0">
+          <button
+            onClick={() => setActiveTab("PRACTICE")}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${
+              activeTab === "PRACTICE" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface hover:bg-surface-container-high"
+            }`}
+          >
+            Just Practice Questions
+          </button>
+          <button
+            onClick={() => setActiveTab("CUSTOM_TEST")}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${
+              activeTab === "CUSTOM_TEST" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface hover:bg-surface-container-high"
+            }`}
+          >
+            Create Your Own Practice Test
+          </button>
+        </div>
+      </div>
+
+      {activeTab === "PRACTICE" && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 w-full items-center">
         <Select
           label=""
           value={section}
@@ -1029,6 +1102,95 @@ function Practice() {
               >
                 Next <Icon name="arrow_forward" className="text-[14px]" />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </>
+      )}
+
+      {activeTab === "CUSTOM_TEST" && (
+        <div className="max-w-3xl mx-auto mt-8 bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-8 shark-shadow">
+          <h2 className="text-2xl font-bold mb-2">Create Custom Practice Test</h2>
+          <p className="text-on-surface-variant text-sm mb-8">Generate a full-length modular practice test focusing on specific topics and difficulties.</p>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-on-surface mb-2">Select Subject</label>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setCustomSubject("READING_WRITING");
+                    setCustomCategories([]);
+                  }}
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold transition-all ${
+                    customSubject === "READING_WRITING" ? "border-primary bg-primary/10 text-primary" : "border-outline-variant hover:border-primary/40 text-on-surface-variant"
+                  }`}
+                >
+                  English (Reading & Writing)
+                </button>
+                <button
+                  onClick={() => {
+                    setCustomSubject("MATH");
+                    setCustomCategories([]);
+                  }}
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold transition-all ${
+                    customSubject === "MATH" ? "border-primary bg-primary/10 text-primary" : "border-outline-variant hover:border-primary/40 text-on-surface-variant"
+                  }`}
+                >
+                  Math
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-on-surface mb-2">Select Difficulties (Optional)</label>
+              <div className="flex gap-3 flex-wrap">
+                {["EASY", "MEDIUM", "HARD"].map((diff) => (
+                  <button
+                    key={diff}
+                    onClick={() => setCustomDifficulties(prev => prev.includes(diff) ? prev.filter(d => d !== diff) : [...prev, diff])}
+                    className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                      customDifficulties.includes(diff) ? "border-primary bg-primary text-on-primary" : "border-outline-variant text-on-surface hover:bg-surface-container-high"
+                    }`}
+                  >
+                    {diff.charAt(0) + diff.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-on-surface mb-2">Select Topics (Optional)</label>
+              <div className="flex gap-2 flex-wrap max-h-48 overflow-y-auto custom-scrollbar p-1">
+                {categories.filter(cat => cat.section === customSubject).map((cat) => (
+                  <button
+                    key={cat._id}
+                    onClick={() => setCustomCategories(prev => prev.includes(cat._id) ? prev.filter(c => c !== cat._id) : [...prev, cat._id])}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                      customCategories.includes(cat._id) ? "border-primary bg-primary text-on-primary" : "border-outline-variant text-on-surface hover:bg-surface-container-high"
+                    }`}
+                  >
+                    {cat.name.replace("SAT Practice: ", "")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-outline-variant/30">
+              <button
+                onClick={handleGenerateCustomTest}
+                disabled={isGeneratingTest}
+                className="w-full py-4 rounded-xl bg-primary text-on-primary font-bold text-base hover:bg-accent transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shark-shadow"
+              >
+                {isGeneratingTest ? "Generating Test..." : "Generate & Start Test"}
+                {!isGeneratingTest && <Icon name="arrow_forward" />}
+              </button>
+              <p className="text-xs text-center text-on-surface-variant mt-4">
+                {customSubject === "READING_WRITING" ? "This will generate 2 modules, 27 questions each (32 mins per module)." : "This will generate 2 modules, 22 questions each (35 mins per module)."}
+                <br />
+                The test will run without breaks.
+              </p>
             </div>
           </div>
         </div>

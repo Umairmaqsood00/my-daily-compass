@@ -158,16 +158,53 @@ export const deleteUpload = async (req: Request, res: Response) => {
   }
 };
 
+import { v2 as cloudinary } from "cloudinary";
+
+// Configure Cloudinary only if variables are set
+const isCloudinaryConfigured = !!(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+if (isCloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
+
 // --- Generic Image Upload ---
 export const uploadImage = async (req: AuthRequest, res: Response) => {
   try {
     const file = (req as any).file;
     if (!file) return res.status(400).json({ success: false, error: "Image file is required" });
 
-    res.status(201).json({
-      success: true,
-      url: `/uploads/${file.filename}`
-    });
+    if (isCloudinaryConfigured) {
+      // Upload directly to Cloudinary from memory buffer
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "sat-sharks" },
+        (error, result) => {
+          if (error) {
+            return res.status(500).json({ success: false, error: "Cloudinary upload failed: " + error.message });
+          }
+          return res.status(201).json({
+            success: true,
+            url: result?.secure_url
+          });
+        }
+      );
+      uploadStream.end(file.buffer);
+    } else {
+      // Fallback: Convert to Base64 Data URL and store directly in DB
+      const base64Data = file.buffer.toString("base64");
+      const dataUrl = `data:${file.mimetype};base64,${base64Data}`;
+      return res.status(201).json({
+        success: true,
+        url: dataUrl
+      });
+    }
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }

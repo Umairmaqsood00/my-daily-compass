@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { Icon } from "../../components/common/Icon";
 import { Badge } from "../../components/ui/Badge";
-import { api } from "../../services/api";
+import { api, resolveImageUrl } from "../../services/api";
+import { ZoomableImage } from "../../components/ui/ZoomableImage";
 import { useAuth } from "../../hooks/useAuth";
 import { SecurityWrapper } from "../../components/common/SecurityWrapper";
 import { ReportIssueModal } from "../../components/common/ReportIssueModal";
@@ -773,6 +774,9 @@ function SATRunner() {
                     <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Passage</span>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                    {q.imageUrl && (
+                      <ZoomableImage src={resolveImageUrl(q.imageUrl)} className="mb-4" />
+                    )}
                     <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(rwSplit.passage)}</p>
                   </div>
                 </div>
@@ -852,6 +856,9 @@ function SATRunner() {
                     <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question Context</span>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                    {q.imageUrl && (
+                      <ZoomableImage src={resolveImageUrl(q.imageUrl)} className="mb-4" />
+                    )}
                     <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(q.text)}</p>
                   </div>
                 </div>

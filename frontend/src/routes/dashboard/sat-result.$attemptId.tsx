@@ -4,7 +4,8 @@ import { StudentLayout } from "../../components/layout/StudentLayout";
 import { ScoreCircle } from "../../components/ui/ScoreCircle";
 import { Badge } from "../../components/ui/Badge";
 import { Icon } from "../../components/common/Icon";
-import { api } from "../../services/api";
+import { api, resolveImageUrl } from "../../services/api";
+import { ZoomableImage } from "../../components/ui/ZoomableImage";
 import type { SATTestAttempt, SATTest, Question } from "../../types";
 import { renderFormattedText } from "../../utils/format";
 
@@ -215,6 +216,9 @@ function SATResult() {
                               {badgeText}
                             </Badge>
                           </div>
+                           {q.imageUrl && (
+                            <ZoomableImage src={resolveImageUrl(q.imageUrl)} className="mb-4" />
+                          )}
                           <p className="text-sm mb-4 leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(q.text)}</p>
                           
                           {q.options && q.options.length > 0 ? (

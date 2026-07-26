@@ -6,7 +6,7 @@ import { Icon } from "../../components/common/Icon";
 import { Select } from "../../components/ui/Select";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ZoomableImage } from "../../components/ui/ZoomableImage";
-import { api } from "../../services/api";
+import { api, resolveImageUrl } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { SecurityWrapper } from "../../components/common/SecurityWrapper";
 import { ReportIssueModal } from "../../components/common/ReportIssueModal";
@@ -672,7 +672,7 @@ function Practice() {
               </div>
               <div className="flex-1 overflow-y-auto p-6 scroll-smooth space-y-6">
                 {q.imageUrl && (
-                  <ZoomableImage src={q.imageUrl} />
+                  <ZoomableImage src={resolveImageUrl(q.imageUrl)} />
                 )}
                 {rwSplit.passage && (
                   <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(rwSplit.passage)}</p>
@@ -966,7 +966,7 @@ function Practice() {
             </div>
             <div className="p-6 overflow-y-auto max-h-[60vh] space-y-6 custom-scrollbar">
               {q.imageUrl && (
-                <ZoomableImage src={q.imageUrl} />
+                <ZoomableImage src={resolveImageUrl(q.imageUrl)} />
               )}
               {rwSplit.passage && (
                 <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(rwSplit.passage)}</p>

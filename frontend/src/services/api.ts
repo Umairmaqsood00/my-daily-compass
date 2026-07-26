@@ -6,7 +6,8 @@ export const API_BASE_URL = (
 
 export const resolveImageUrl = (url: string) => {
   if (!url) return "";
-  // Already an absolute URL (e.g. external image links)
+  // Already a base64 encoded data URL or absolute URL
+  if (url.startsWith("data:")) return url;
   if (url.startsWith("http")) return url;
   // In production with explicit backend URL configured, prepend it
   if (API_BASE_URL) return `${API_BASE_URL}${url}`;

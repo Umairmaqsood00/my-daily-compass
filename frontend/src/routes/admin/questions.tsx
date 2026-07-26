@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { AdminLayout } from "../../components/layout/AdminLayout";
 import { Modal } from "../../components/ui/Modal";
+import { MathEditorModal } from "../../components/ui/MathEditorModal";
 import { Badge } from "../../components/ui/Badge";
 import { Icon } from "../../components/common/Icon";
 import { Input } from "../../components/ui/Input";
@@ -11,10 +12,50 @@ import { SearchInput } from "../../components/ui/SearchInput";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { api, getBackendUrl, resolveImageUrl } from "../../services/api";
 import type { Question, QuestionCategory } from "../../types";
+import { renderFormattedText } from "../../utils/format";
 
 export const Route = createFileRoute("/admin/questions")({
   component: AdminQuestions,
 });
+
+const MATH_SYMBOLS = [
+  { label: "Fraction", latex: "$\\frac{a}{b}$", display: "a/b" },
+  { label: "Exponent", latex: "$x^2$", display: "x²" },
+  { label: "Subscript", latex: "$x_n$", display: "xₙ" },
+  { label: "Square Root", latex: "$\\sqrt{x}$", display: "√x" },
+  { label: "Radical", latex: "$\\sqrt[n]{x}$", display: "ⁿ√x" },
+  { label: "Pi", latex: "$\\pi$", display: "π" },
+  { label: "Theta", latex: "$\\theta$", display: "θ" },
+  { label: "Plus-Minus", latex: "$\\pm$", display: "±" },
+  { label: "Not Equal", latex: "$\\neq$", display: "≠" },
+  { label: "Greater/Equal", latex: "$\\ge$", display: "≥" },
+  { label: "Less/Equal", latex: "$\\le$", display: "≤" },
+  { label: "Times", latex: "$\\times$", display: "×" },
+];
+
+const insertLatex = (
+  latex: string, 
+  fieldName: string, 
+  setForm: React.Dispatch<React.SetStateAction<any>>,
+  inputId: string
+) => {
+  const input = document.getElementById(inputId) as HTMLTextAreaElement | HTMLInputElement;
+  if (input) {
+    const start = input.selectionStart || 0;
+    const end = input.selectionEnd || 0;
+    const val = input.value || "";
+    const newVal = val.substring(0, start) + latex + val.substring(end);
+    setForm((p: any) => ({ ...p, [fieldName]: newVal }));
+    // refocus and set cursor inside the math signs
+    setTimeout(() => {
+      input.focus();
+      const cursorOffset = latex.endsWith("$") ? latex.length - 1 : latex.length;
+      input.setSelectionRange(start + cursorOffset, start + cursorOffset);
+    }, 50);
+  } else {
+    setForm((p: any) => ({ ...p, [fieldName]: (p[fieldName] || "") + latex }));
+  }
+};
 
 function AdminQuestions() {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -40,6 +81,20 @@ function AdminQuestions() {
   const [submitting, setSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
+
+  const [mathEditorOpen, setMathEditorOpen] = useState(false);
+  const [mathActiveField, setMathActiveField] = useState<{ name: string; inputId: string } | null>(null);
+
+  const openVisualMathEditor = (fieldName: string, inputId: string) => {
+    setMathActiveField({ name: fieldName, inputId });
+    setMathEditorOpen(true);
+  };
+
+  const handleInsertVisualMath = (latex: string) => {
+    if (mathActiveField) {
+      insertLatex(latex, mathActiveField.name, setForm, mathActiveField.inputId);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent) => {
     e.preventDefault();
@@ -271,7 +326,7 @@ function AdminQuestions() {
                 {questions.map((q) => (
                   <tr key={q._id} className="hover:bg-surface-container-low/50 transition-colors">
                     <td className="p-4 text-sm max-w-md">
-                      <p className="line-clamp-2">{q.text}</p>
+                      <p className="line-clamp-2">{renderFormattedText(q.text)}</p>
                       <div className="flex gap-2 mt-1">
                         <Badge variant="info">{q.section === "MATH" ? "Math" : "R&W"}</Badge>
                         {q.source === "AI_EXTRACTED" && <Badge variant="accent">AI</Badge>}
@@ -351,7 +406,48 @@ function AdminQuestions() {
               )}
             </div>
           </div>
-          <Textarea label="Question Text *" value={form.text} onChange={(e) => setForm((p) => ({ ...p, text: e.target.value }))} rows={3} required placeholder="Enter the question..." />
+          <div className="space-y-1">
+            <div className="flex justify-between items-end">
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question Text *</label>
+            </div>
+            <div className="flex flex-wrap gap-1.5 px-2.5 py-1.5 rounded-xl border border-outline-variant/30 bg-surface-container-low mb-1 overflow-x-auto max-w-full items-center">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-on-surface-variant mr-1">Math Symbols:</span>
+              <button
+                type="button"
+                onClick={() => openVisualMathEditor("text", "q-bank-text")}
+                className="px-2 py-0.5 rounded bg-primary text-on-primary hover:bg-accent text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0"
+              >
+                <Icon name="functions" className="text-[12px]" />
+                <span>Visual Editor</span>
+              </button>
+              {MATH_SYMBOLS.map((sym) => (
+                <button
+                  key={sym.label}
+                  type="button"
+                  onClick={() => insertLatex(sym.latex, "text", setForm, "q-bank-text")}
+                  className="px-1.5 py-0.5 rounded bg-surface hover:bg-surface-container-high text-[10px] font-bold text-primary transition-colors border border-outline-variant/40 cursor-pointer"
+                  title={`Insert ${sym.label}`}
+                >
+                  {sym.latex.replace(/\$/g, "")}
+                </button>
+              ))}
+            </div>
+            <Textarea
+              id="q-bank-text"
+              value={form.text}
+              onChange={(e) => setForm((p) => ({ ...p, text: e.target.value }))}
+              rows={3}
+              required
+              placeholder="Enter the question..."
+            />
+            {/* Live preview */}
+            <div className="mt-1.5 p-3 rounded-xl border border-primary/20 bg-primary/5">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-primary block mb-0.5">Live Math Preview:</span>
+              <div className="text-xs font-medium text-on-surface whitespace-pre-wrap leading-relaxed min-h-[16px]">
+                {renderFormattedText(form.text || "Type math equations wrapped in $...")}
+              </div>
+            </div>
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <Select
@@ -381,19 +477,43 @@ function AdminQuestions() {
             <div className="space-y-3">
               <label className="mb-1.5 block font-mono text-[12px] uppercase tracking-[0.08em] text-on-surface-variant">Answer Options *</label>
               {(["A", "B", "C", "D"] as const).map((label) => (
-                <div key={label} className="flex items-center gap-3">
-                  <span className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high"}`}>{label}</span>
-                  <input
-                    type="text"
-                    value={form[`opt${label}` as keyof typeof form]}
-                    onChange={(e) => setForm((p) => ({ ...p, [`opt${label}`]: e.target.value }))}
-                    placeholder={`Option ${label}`}
-                    className="flex-1 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors"
-                    required
-                  />
-                  <button type="button" onClick={() => setForm((p) => ({ ...p, correctAnswer: label }))} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high hover:bg-surface-container-highest"}`}>
-                    {form.correctAnswer === label ? "Correct" : "Set"}
-                  </button>
+                <div key={label} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <span className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high"}`}>{label}</span>
+                    <input
+                      id={`q-bank-opt${label}`}
+                      type="text"
+                      value={form[`opt${label}` as keyof typeof form]}
+                      onChange={(e) => setForm((p) => ({ ...p, [`opt${label}`]: e.target.value }))}
+                      placeholder={`Option ${label}`}
+                      className="flex-1 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+                      required
+                    />
+                    <button type="button" onClick={() => setForm((p) => ({ ...p, correctAnswer: label }))} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high hover:bg-surface-container-highest"}`}>
+                      {form.correctAnswer === label ? "Correct" : "Set"}
+                    </button>
+                  </div>
+                  {/* Quick math symbol bar for options */}
+                  <div className="flex flex-wrap gap-1 pl-11 overflow-x-auto items-center">
+                    <button
+                      type="button"
+                      onClick={() => openVisualMathEditor(`opt${label}`, `q-bank-opt${label}`)}
+                      className="px-1.5 py-0.5 rounded bg-primary text-on-primary hover:bg-accent text-[9px] font-bold transition-all cursor-pointer flex items-center gap-0.5 shrink-0"
+                    >
+                      <Icon name="functions" className="text-[10px]" />
+                      <span>Visual Editor</span>
+                    </button>
+                    {MATH_SYMBOLS.map((sym) => (
+                      <button
+                        key={sym.label}
+                        type="button"
+                        onClick={() => insertLatex(sym.latex, `opt${label}`, setForm, `q-bank-opt${label}`)}
+                        className="px-1 py-0.5 rounded bg-surface hover:bg-surface-container-high text-[9px] font-semibold text-primary transition-colors border border-outline-variant/30 cursor-pointer"
+                      >
+                        {sym.latex.replace(/\$/g, "")}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -408,7 +528,46 @@ function AdminQuestions() {
               />
             </div>
           )}
-          <Textarea label="Explanation" value={form.explanation} onChange={(e) => setForm((p) => ({ ...p, explanation: e.target.value }))} rows={2} placeholder="Why is this the correct answer?" />
+
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">Explanation</label>
+            <div className="flex flex-wrap gap-1.5 px-2.5 py-1.5 rounded-xl border border-outline-variant/30 bg-surface-container-low mb-1 overflow-x-auto max-w-full items-center">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-on-surface-variant mr-1">Math Symbols:</span>
+              <button
+                type="button"
+                onClick={() => openVisualMathEditor("explanation", "q-bank-expl")}
+                className="px-2 py-0.5 rounded bg-primary text-on-primary hover:bg-accent text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0"
+              >
+                <Icon name="functions" className="text-[12px]" />
+                <span>Visual Editor</span>
+              </button>
+              {MATH_SYMBOLS.map((sym) => (
+                <button
+                  key={sym.label}
+                  type="button"
+                  onClick={() => insertLatex(sym.latex, "explanation", setForm, "q-bank-expl")}
+                  className="px-1.5 py-0.5 rounded bg-surface hover:bg-surface-container-high text-[10px] font-bold text-primary transition-colors border border-outline-variant/40 cursor-pointer"
+                  title={`Insert ${sym.label}`}
+                >
+                  {sym.latex.replace(/\$/g, "")}
+                </button>
+              ))}
+            </div>
+            <Textarea
+              id="q-bank-expl"
+              value={form.explanation}
+              onChange={(e) => setForm((p) => ({ ...p, explanation: e.target.value }))}
+              rows={2}
+              placeholder="Why is this the correct answer?"
+            />
+            {/* Live preview */}
+            <div className="mt-1.5 p-3 rounded-xl border border-primary/20 bg-primary/5">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-primary block mb-0.5">Live Math Preview:</span>
+              <div className="text-xs font-medium text-on-surface whitespace-pre-wrap leading-relaxed min-h-[16px]">
+                {renderFormattedText(form.explanation || "Type explanation math equations wrapped in $...")}
+              </div>
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-4">
             <Select
               label="Category"
@@ -496,6 +655,12 @@ function AdminQuestions() {
           <button type="submit" className="px-4 py-3 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-accent transition-colors cursor-pointer">Add</button>
         </form>
       </Modal>
+
+      <MathEditorModal
+        isOpen={mathEditorOpen}
+        onClose={() => setMathEditorOpen(false)}
+        onInsert={handleInsertVisualMath}
+      />
     </AdminLayout>
   );
 }

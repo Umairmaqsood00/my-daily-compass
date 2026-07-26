@@ -13,6 +13,7 @@ const navItems = [
   { to: "/dashboard/analytics", label: "Analytics", icon: "insights" },
   { to: "/dashboard/leaderboard", label: "Leaderboard", icon: "emoji_events" },
   { to: "/dashboard/study-materials", label: "Study Materials", icon: "menu_book" },
+  { to: "/dashboard/live-classes", label: "Live Classes", icon: "video_camera_front" },
 ];
 
 export function StudentLayout({ children, activeItem }: { children: ReactNode; activeItem: string }) {

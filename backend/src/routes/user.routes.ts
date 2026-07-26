@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getCurrentUser, getUsers, updateUserSubscription, updateUserStatus, updateUserSettings } from "../controllers/user.controller";
+import { getCurrentUser, getUsers, updateUserSubscription, updateUserStatus, updateUserSettings, updateUserRole } from "../controllers/user.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { requireAdmin } from "../middleware/role.middleware";
 
@@ -13,5 +13,6 @@ router.put("/me/settings", authenticate, updateUserSettings);
 router.get("/", authenticate, requireAdmin(), getUsers);
 router.put("/:id/subscription", authenticate, requireAdmin(), updateUserSubscription);
 router.put("/:id/status", authenticate, requireAdmin(), updateUserStatus);
+router.put("/:id/role", authenticate, requireAdmin(), updateUserRole);
 
 export default router;

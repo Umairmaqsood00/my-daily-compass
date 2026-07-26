@@ -1,0 +1,284 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { TeacherLayout } from "../../components/layout/TeacherLayout";
+import { useState, useEffect } from "react";
+import { api } from "../../services/api";
+import { Icon } from "../../components/common/Icon";
+import { Badge } from "../../components/ui/Badge";
+import { Modal } from "../../components/ui/Modal";
+import { Input } from "../../components/ui/Input";
+import { Textarea } from "../../components/ui/Textarea";
+import { useAuth } from "../../hooks/useAuth";
+
+export const Route = createFileRoute("/teacher/classes")({
+  component: TeacherClasses,
+});
+
+function TeacherClasses() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  console.log("TeacherClasses Render - User Context:", user);
+
+  // Form State
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    scheduledAt: "",
+    duration: 60,
+  });
+
+  const fetchClasses = () => {
+    setLoading(true);
+    api.get("/api/live-classes")
+      .then((res) => {
+        if (res.success) {
+          setClasses(res.classes || []);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const handleCreateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title || !form.scheduledAt) return;
+
+    setSubmitting(true);
+    console.log("Create Class Submission - User Context:", user);
+    try {
+      const teacherId = user?.id || user?._id || user?.userId;
+      console.log("Resolved Teacher ID:", teacherId);
+      if (!teacherId) {
+        alert("Teacher profile not loaded. Please re-login. (Details: " + JSON.stringify(user) + ")");
+        return;
+      }
+      const res = await api.post("/api/live-classes", {
+        ...form,
+        teacherId,
+      });
+      if (res.success) {
+        fetchClasses();
+        setModalOpen(false);
+        setForm({ title: "", description: "", scheduledAt: "", duration: 60 });
+        
+        // Mark as LIVE and navigate immediately for testing
+        if (res.liveClass?._id) {
+          await api.put(`/api/live-classes/${res.liveClass._id}/status`, { status: "LIVE" });
+          navigate({ to: "/live-class/$id", params: { id: res.liveClass._id } });
+        }
+      } else {
+        alert(res.error || "Failed to create class session.");
+      }
+    } catch (err) {
+      alert("Error creating class session.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const res = await api.put(`/api/live-classes/${id}/status`, { status });
+      if (res.success) {
+        fetchClasses();
+      }
+    } catch (err) {
+      alert("Failed to update status.");
+    }
+  };
+
+  return (
+    <TeacherLayout activeItem="/teacher/classes">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-on-background mb-2">My Live Classes</h1>
+          <p className="text-on-surface-variant text-sm">
+            Launch live sessions, schedule upcoming ones, and review completed sessions.
+          </p>
+        </div>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-2 px-5 py-3 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-accent transition-colors cursor-pointer border-none shadow-sm"
+        >
+          <Icon name="add" />
+          Schedule Class
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center p-12 text-on-surface-variant animate-pulse">Loading classes...</div>
+      ) : classes.length === 0 ? (
+        <div className="bg-surface-container-lowest border border-outline-variant/35 rounded-2xl p-16 text-center flex flex-col items-center">
+          <Icon name="video_camera_front" className="text-5xl text-on-surface-variant/40 mb-4" />
+          <p className="text-lg font-bold text-on-surface mb-2">No live classes found</p>
+          <p className="text-sm text-on-surface-variant max-w-sm">
+            You don't have any classes scheduled yet. Click "Schedule Class" above to create your first class.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {classes.map((c) => (
+            <div
+              key={c._id}
+              className="bg-surface-container-lowest border border-outline-variant/35 rounded-2xl p-6 shark-shadow flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-4 mb-3">
+                  <Badge
+                    variant={
+                      c.status === "LIVE"
+                        ? "success"
+                        : c.status === "COMPLETED"
+                        ? "neutral"
+                        : c.status === "CANCELLED"
+                        ? "error"
+                        : "info"
+                    }
+                  >
+                    {c.status}
+                  </Badge>
+                  <span className="text-[11px] text-on-surface-variant font-mono">
+                    ID: {c.roomName}
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-bold text-on-surface mb-1.5">{c.title}</h3>
+                {c.description && (
+                  <p className="text-sm text-on-surface-variant mb-4 line-clamp-2">{c.description}</p>
+                )}
+
+                <div className="space-y-2 border-t border-outline-variant/20 pt-4 mb-6">
+                  <p className="text-xs text-on-surface-variant flex items-center gap-2">
+                    <Icon name="calendar_today" className="text-[16px] text-primary" />
+                    <span className="font-semibold text-on-surface">Scheduled At:</span>{" "}
+                    {new Date(c.scheduledAt).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-on-surface-variant flex items-center gap-2">
+                    <Icon name="schedule" className="text-[16px] text-primary" />
+                    <span className="font-semibold text-on-surface">Duration:</span> {c.duration} minutes
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {c.status === "SCHEDULED" && (
+                  <>
+                    <Link
+                      to="/live-class/$id"
+                      params={{ id: c._id }}
+                      onClick={() => handleUpdateStatus(c._id, "LIVE")}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl text-xs font-bold hover:bg-accent transition-colors"
+                    >
+                      <Icon name="play_arrow" />
+                      Start Class
+                    </Link>
+                    <button
+                      onClick={() => handleUpdateStatus(c._id, "CANCELLED")}
+                      className="px-4 py-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-xs font-bold text-on-surface-variant transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+
+                {c.status === "LIVE" && (
+                  <>
+                    <Link
+                      to="/live-class/$id"
+                      params={{ id: c._id }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-success text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity"
+                    >
+                      <Icon name="video_call" />
+                      Join Live Call
+                    </Link>
+                    <button
+                      onClick={() => handleUpdateStatus(c._id, "COMPLETED")}
+                      className="px-4 py-2.5 bg-on-surface-variant/10 text-on-surface-variant hover:bg-on-surface-variant/15 rounded-xl text-xs font-bold transition-colors cursor-pointer border-none"
+                    >
+                      End Class
+                    </button>
+                  </>
+                )}
+
+                {c.status === "COMPLETED" && (
+                  <div className="w-full text-center text-xs text-on-surface-variant/70 italic py-2">
+                    Class session completed
+                  </div>
+                )}
+
+                {c.status === "CANCELLED" && (
+                  <div className="w-full text-center text-xs text-error/70 italic py-2">
+                    Class session cancelled
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Schedule Class Modal */}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Schedule New Class">
+        <form onSubmit={handleCreateClass} className="space-y-4">
+          <Input
+            label="Class Title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="e.g. SAT Reading: Context Clues"
+            required
+          />
+
+          <Textarea
+            label="Description"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Describe what will be covered in this class..."
+            rows={3}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              type="datetime-local"
+              label="Date & Time"
+              value={form.scheduledAt}
+              onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
+              required
+            />
+            <Input
+              type="number"
+              label="Duration (mins)"
+              value={form.duration}
+              onChange={(e) => setForm({ ...form, duration: parseInt(e.target.value) || 60 })}
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="px-6 py-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-sm font-semibold transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-semibold text-sm hover:bg-accent transition-colors disabled:opacity-50 cursor-pointer border-none"
+            >
+              {submitting ? "Scheduling..." : "Schedule"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </TeacherLayout>
+  );
+}

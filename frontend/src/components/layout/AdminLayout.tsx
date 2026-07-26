@@ -19,6 +19,7 @@ const navItems = [
   { to: "/admin/universities", label: "Universities", icon: "school" },
   { to: "/admin/study-materials", label: "Study Materials", icon: "menu_book" },
   { to: "/admin/reports", label: "Reported Issues", icon: "report_problem" },
+  { to: "/admin/classes", label: "Live Classes", icon: "video_camera_front" },
 ];
 
 export function AdminLayout({ children, activeItem }: { children: ReactNode; activeItem: string }) {

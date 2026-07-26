@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import { getStudyMaterials, uploadStudyMaterial, deleteStudyMaterial } from "../controllers/study-material.controller";
 import { authenticate } from "../middleware/auth.middleware";
-import { requireAdmin } from "../middleware/role.middleware";
+import { requireAdminOrTeacher } from "../middleware/role.middleware";
 
 const storage = multer.diskStorage({
   destination: path.resolve(__dirname, "../../uploads"),
@@ -25,7 +25,7 @@ const upload = multer({
 const router = Router();
 
 router.get("/", authenticate, getStudyMaterials);
-router.post("/", authenticate, requireAdmin(), upload.single("file"), uploadStudyMaterial);
-router.delete("/:id", authenticate, requireAdmin(), deleteStudyMaterial);
+router.post("/", authenticate, requireAdminOrTeacher(), upload.single("file"), uploadStudyMaterial);
+router.delete("/:id", authenticate, requireAdminOrTeacher(), deleteStudyMaterial);
 
 export default router;

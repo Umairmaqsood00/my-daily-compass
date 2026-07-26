@@ -98,7 +98,11 @@ export const getUsers = async (req: Request, res: Response) => {
       return res.status(200).json({ success: true, users: [] });
     }
 
-    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    const { role } = req.query;
+    const filter: any = {};
+    if (role) filter.role = role;
+
+    const users = await User.find(filter).select("-password").sort({ createdAt: -1 });
     res.status(200).json({ success: true, users });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
@@ -129,6 +133,26 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     if (!process.env.DATABASE_URL) return res.status(200).json({ success: true, message: "Status updated (mock)" });
 
     const user = await User.findByIdAndUpdate(id, { status }, { new: true }).select("-password");
+    if (!user) return res.status(404).json({ success: false, error: "User not found" });
+
+    res.status(200).json({ success: true, user });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!["ADMIN", "STUDENT", "TEACHER"].includes(role)) {
+      return res.status(400).json({ success: false, error: "Invalid role" });
+    }
+
+    if (!process.env.DATABASE_URL) return res.status(200).json({ success: true, message: "Role updated (mock)" });
+
+    const user = await User.findByIdAndUpdate(id, { role }, { new: true }).select("-password");
     if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
     res.status(200).json({ success: true, user });

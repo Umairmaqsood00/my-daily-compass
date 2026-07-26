@@ -31,6 +31,7 @@ export function Header() {
     { to: "/contact", hash: undefined, label: "Contact" },
     ...(user?.role === "STUDENT" ? [{ to: "/dashboard/", hash: undefined, label: "Dashboard" }] : []),
     ...(user?.role === "ADMIN" ? [{ to: "/admin", hash: undefined, label: "Admin Panel" }] : []),
+    ...(user?.role === "TEACHER" ? [{ to: "/teacher", hash: undefined, label: "Teacher Panel" }] : []),
   ];
 
   return (

@@ -38,6 +38,14 @@ function AdminUsers() {
     }
   };
 
+  const updateRole = async (id: string, current: string) => {
+    const nextRole = current === "STUDENT" ? "TEACHER" : "STUDENT";
+    const res = await api.put(`/api/users/${id}/role`, { role: nextRole });
+    if (res.success) {
+      setUsersList((prev) => prev.map((u) => (u._id === id ? { ...u, role: nextRole } : u)));
+    }
+  };
+
   return (
     <AdminLayout activeItem="/admin/users">
       <h1 className="text-3xl font-bold mb-8">User Management</h1>
@@ -60,6 +68,7 @@ function AdminUsers() {
                   <div className="font-semibold">
                     {u.name}{" "}
                     {u.role === "ADMIN" && <Badge variant="accent" className="ml-2">ADMIN</Badge>}
+                    {u.role === "TEACHER" && <Badge variant="info" className="ml-2 bg-info/10 text-info border border-info/20">TEACHER</Badge>}
                   </div>
                   <div className="text-sm text-on-surface-variant">{u.email}</div>
                 </td>
@@ -81,6 +90,12 @@ function AdminUsers() {
                         className="px-3 py-1 bg-surface-container-high hover:bg-surface-container-highest rounded text-sm transition-colors cursor-pointer"
                       >
                         {u.subscription === "FREE" ? "Upgrade" : "Downgrade"}
+                      </button>
+                      <button
+                        onClick={() => updateRole(u._id, u.role)}
+                        className="px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded text-sm transition-colors cursor-pointer"
+                      >
+                        {u.role === "STUDENT" ? "Make Teacher" : "Make Student"}
                       </button>
                       <button
                         onClick={() => updateStatus(u._id, u.status)}

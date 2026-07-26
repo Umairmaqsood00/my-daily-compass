@@ -62,6 +62,7 @@ import universityRoutes from "./routes/university.routes";
 import paymentRoutes from "./routes/payment.routes";
 import studyMaterialRoutes from "./routes/study-material.routes";
 import reportRoutes from "./routes/report.routes";
+import liveClassRoutes from "./routes/live-class.routes";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -83,6 +84,7 @@ app.use("/api/universities", universityRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/study-materials", studyMaterialRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/live-classes", liveClassRoutes);
 
 // Serve uploaded files with cross-origin headers so images load from any network origin
 import path from "path";

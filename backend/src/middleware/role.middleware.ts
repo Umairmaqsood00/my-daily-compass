@@ -54,3 +54,21 @@ export const requireActiveUser = () => {
     next();
   };
 };
+
+export const requireTeacher = () => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || req.user.role !== "TEACHER") {
+      return res.status(403).json({ success: false, error: "Forbidden: Teacher access required" });
+    }
+    next();
+  };
+};
+
+export const requireAdminOrTeacher = () => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || (req.user.role !== "ADMIN" && req.user.role !== "TEACHER")) {
+      return res.status(403).json({ success: false, error: "Forbidden: Admin or Teacher access required" });
+    }
+    next();
+  };
+};

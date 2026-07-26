@@ -2,6 +2,23 @@ import { useState, useEffect, useRef } from "react";
 import { Modal } from "./Modal";
 import { Icon } from "../common/Icon";
 
+// Declare custom web-component for React TypeScript to prevent lint/compile errors in any TypeScript setup
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      'math-field': any;
+    }
+  }
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'math-field': any;
+    }
+  }
+}
+
 interface MathEditorModalProps {
   isOpen: boolean;
   onClose: () => void;

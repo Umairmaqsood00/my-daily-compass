@@ -1,30 +1,24 @@
 import "../config/env";
-import fs from "fs";
-import path from "path";
-import { PDFParse } from "pdf-parse";
+import mongoose from "mongoose";
+import { connectDB } from "../config/db";
+import SATTest from "../models/SATTest";
+import Question from "../models/Question";
 
 async function main() {
-  const dir = "s:\\github\\my-daily-compass\\practicequestions2";
-  const qPath = path.join(dir, "DSAT_Questions_Only_FINAL.pdf");
-  const sPath = path.join(dir, "DSAT_Solutions_FINAL.pdf");
-  
-  if (fs.existsSync(qPath)) {
-    const dataBuffer = fs.readFileSync(qPath);
-    const parser = new PDFParse({ data: dataBuffer });
-    const result = await parser.getText();
-    await parser.destroy();
-    console.log("=== QUESTIONS ===");
-    console.log(result.text.substring(0, 1000));
+  const connected = await connectDB();
+  if (!connected) {
+    console.error("Database connection failed");
+    return;
   }
   
-  if (fs.existsSync(sPath)) {
-    const dataBuffer = fs.readFileSync(sPath);
-    const parser = new PDFParse({ data: dataBuffer });
-    const result = await parser.getText();
-    await parser.destroy();
-    console.log("=== SOLUTIONS ===");
-    console.log(result.text.substring(0, 1000));
+  const questions = await Question.find({ text: /For certain altitudes/i });
+  console.log(`Found ${questions.length} questions matching "For certain altitudes":`);
+  for (const q of questions) {
+    console.log(`- ID: ${q._id}, Text: "${q.text}"`);
+    console.log(`  Options:`, q.options);
   }
+  
+  await mongoose.disconnect();
 }
 
 main().catch(console.error);

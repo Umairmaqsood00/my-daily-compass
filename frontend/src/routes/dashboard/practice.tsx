@@ -11,6 +11,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { SecurityWrapper } from "../../components/common/SecurityWrapper";
 import { ReportIssueModal } from "../../components/common/ReportIssueModal";
 import type { Question, QuestionCategory } from "../../types";
+import { renderFormattedText } from "../../utils/format";
 
 export const Route = createFileRoute("/dashboard/practice")({
   component: Practice,
@@ -674,10 +675,10 @@ function Practice() {
                   <ZoomableImage src={q.imageUrl} />
                 )}
                 {rwSplit.passage && (
-                  <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+                  <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(rwSplit.passage)}</p>
                 )}
                 {rwSplit.prompt && (
-                  <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{rwSplit.prompt}</p>
+                  <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{renderFormattedText(rwSplit.prompt)}</p>
                 )}
               </div>
             </div>
@@ -739,7 +740,7 @@ function Practice() {
                           }`}>
                             {opt.label}
                           </span>
-                          <span className="text-sm">{opt.text}</span>
+                          <span className="text-sm">{renderFormattedText(opt.text)}</span>
                           {showResult && opt.label === result?.correctAnswer && (
                             <Icon name="check_circle" className="ml-auto text-primary text-[20px]" />
                           )}
@@ -784,7 +785,7 @@ function Practice() {
                       <span className="font-semibold text-sm">{result.isCorrect ? "Correct!" : "Incorrect"}</span>
                     </div>
                     {result.explanation && (
-                      <p className="text-sm text-on-surface-variant whitespace-pre-wrap">{result.explanation}</p>
+                      <p className="text-sm text-on-surface-variant whitespace-pre-wrap">{renderFormattedText(result.explanation)}</p>
                     )}
                   </div>
                 )}
@@ -968,10 +969,10 @@ function Practice() {
                 <ZoomableImage src={q.imageUrl} />
               )}
               {rwSplit.passage && (
-                <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+                <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(rwSplit.passage)}</p>
               )}
               {rwSplit.prompt && (
-                <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{rwSplit.prompt}</p>
+                <p className="text-[15px] font-semibold text-on-surface leading-relaxed whitespace-pre-wrap">{renderFormattedText(rwSplit.prompt)}</p>
               )}
             </div>
           </div>
@@ -1021,7 +1022,7 @@ function Practice() {
                         }`}>
                           {opt.label}
                         </span>
-                        <span className="text-sm">{opt.text}</span>
+                        <span className="text-sm">{renderFormattedText(opt.text)}</span>
                         {showResult && opt.label === result?.correctAnswer && (
                           <Icon name="check_circle" className="ml-auto text-primary text-[20px]" />
                         )}
@@ -1066,7 +1067,7 @@ function Practice() {
                     <span className="font-semibold text-sm">{result.isCorrect ? "Correct!" : "Incorrect"}</span>
                   </div>
                   {result.explanation && (
-                    <p className="text-sm text-on-surface-variant whitespace-pre-wrap">{result.explanation}</p>
+                    <p className="text-sm text-on-surface-variant whitespace-pre-wrap">{renderFormattedText(result.explanation)}</p>
                   )}
                 </div>
               )}

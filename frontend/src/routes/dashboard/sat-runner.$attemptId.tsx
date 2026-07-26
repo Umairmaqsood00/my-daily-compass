@@ -7,6 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { SecurityWrapper } from "../../components/common/SecurityWrapper";
 import { ReportIssueModal } from "../../components/common/ReportIssueModal";
 import type { SATTest, SATModule, Question } from "../../types";
+import { renderFormattedText } from "../../utils/format";
 
 export const Route = createFileRoute("/dashboard/sat-runner/$attemptId")({
   component: SATRunner,
@@ -772,7 +773,7 @@ function SATRunner() {
                     <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Passage</span>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                    <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{rwSplit.passage}</p>
+                    <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(rwSplit.passage)}</p>
                   </div>
                 </div>
 
@@ -809,7 +810,7 @@ function SATRunner() {
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
                     {rwSplit.prompt && (
-                      <p className="text-[15px] font-semibold text-on-surface leading-relaxed mb-5 whitespace-pre-wrap">{rwSplit.prompt}</p>
+                      <p className="text-[15px] font-semibold text-on-surface leading-relaxed mb-5 whitespace-pre-wrap">{renderFormattedText(rwSplit.prompt)}</p>
                     )}
 
                     {q.options && q.options.length > 0 && (
@@ -833,7 +834,7 @@ function SATRunner() {
                               >
                                 {opt.label}
                               </span>
-                              <span className="text-sm leading-relaxed">{opt.text}</span>
+                              <span className="text-sm leading-relaxed">{renderFormattedText(opt.text)}</span>
                             </button>
                           );
                         })}
@@ -851,7 +852,7 @@ function SATRunner() {
                     <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Question Context</span>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                    <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{q.text}</p>
+                    <p className="text-[15px] leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(q.text)}</p>
                   </div>
                 </div>
 
@@ -908,7 +909,7 @@ function SATRunner() {
                               >
                                 {opt.label}
                               </span>
-                              <span className="text-sm leading-relaxed">{opt.text}</span>
+                              <span className="text-sm leading-relaxed">{renderFormattedText(opt.text)}</span>
                             </button>
                           );
                         })}

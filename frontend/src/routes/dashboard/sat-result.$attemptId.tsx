@@ -6,6 +6,7 @@ import { Badge } from "../../components/ui/Badge";
 import { Icon } from "../../components/common/Icon";
 import { api } from "../../services/api";
 import type { SATTestAttempt, SATTest, Question } from "../../types";
+import { renderFormattedText } from "../../utils/format";
 
 export const Route = createFileRoute("/dashboard/sat-result/$attemptId")({
   component: SATResult,
@@ -214,7 +215,7 @@ function SATResult() {
                               {badgeText}
                             </Badge>
                           </div>
-                          <p className="text-sm mb-4 leading-relaxed text-on-surface whitespace-pre-wrap">{q.text}</p>
+                          <p className="text-sm mb-4 leading-relaxed text-on-surface whitespace-pre-wrap">{renderFormattedText(q.text)}</p>
                           
                           {q.options && q.options.length > 0 ? (
                             <div className="space-y-2">
@@ -233,7 +234,7 @@ function SATResult() {
                                     }`}
                                   >
                                     <span className="font-bold w-6">{opt.label}.</span>
-                                    <span>{opt.text}</span>
+                                    <span>{renderFormattedText(opt.text)}</span>
                                     {isCorrectOption && <Icon name="check_circle" className="ml-auto text-primary text-[18px]" />}
                                     {isSelected && !isCorrectOption && <Icon name="cancel" className="ml-auto text-error text-[18px]" />}
                                   </div>
@@ -261,7 +262,7 @@ function SATResult() {
                           {q.explanation && (
                             <div className="mt-4 p-3 rounded-lg bg-surface-container-low text-xs text-on-surface-variant border border-outline-variant/20">
                               <strong className="block mb-1 text-on-surface">Explanation:</strong> 
-                              <div className="whitespace-pre-wrap leading-relaxed">{q.explanation}</div>
+                              <div className="whitespace-pre-wrap leading-relaxed">{renderFormattedText(q.explanation)}</div>
                             </div>
                           )}
                         </div>

@@ -2,7 +2,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "STUDENT";
+  role: "ADMIN" | "STUDENT" | "TEACHER";
   country: string;
   region: "LOCAL" | "INTERNATIONAL";
   subscription: "FREE" | "PAID";

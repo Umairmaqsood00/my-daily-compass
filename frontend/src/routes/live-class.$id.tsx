@@ -22,8 +22,15 @@ function LiveClassRoom() {
   const navigate = useNavigate();
   const [classSession, setClassSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSecure, setIsSecure] = useState(true);
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsSecure(window.isSecureContext);
+    }
+  }, []);
 
   // Fetch Class Details
   useEffect(() => {
@@ -220,6 +227,15 @@ function LiveClassRoom() {
         </div>
       </div>
 
+      {!isSecure && (
+        <div className="bg-error/15 border-b border-error/20 px-6 py-4 flex items-center gap-3 animate-fade-in text-error">
+          <Icon name="warning" className="text-xl shrink-0" />
+          <div className="text-xs md:text-sm font-medium">
+            <strong>Secure Context Required:</strong> WebRTC camera/microphone access is disabled by your browser because this site is accessed via an insecure connection (e.g. local IP address). Please access using <strong>http://localhost:5173</strong> or configure HTTPS.
+          </div>
+        </div>
+      )}
+ 
       {/* Embedded Iframe Container */}
       <div className="w-full bg-black relative" style={{ minHeight: "80vh", height: "800px" }}>
         <div ref={jitsiContainerRef} className="w-full h-full absolute inset-0" />

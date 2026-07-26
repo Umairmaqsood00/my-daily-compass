@@ -1,5 +1,7 @@
 export interface User {
   id: string;
+  _id?: string;
+  userId?: string;
   name: string;
   email: string;
   role: "ADMIN" | "STUDENT" | "TEACHER";

@@ -30,7 +30,15 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     }
     
     if (!plan) {
-      return res.status(400).json({ success: false, error: "Invalid plan selected" });
+      if (planId === "rw") {
+        plan = { id: "rw", name: "Reading & Writing Module", price: "$200" };
+      } else if (planId === "math") {
+        plan = { id: "math", name: "Math Module", price: "$200" };
+      } else if (planId === "bundle") {
+        plan = { id: "bundle", name: "Complete SAT Prep", price: "$350" };
+      } else {
+        return res.status(400).json({ success: false, error: "Invalid plan selected" });
+      }
     }
 
     // Determine gateway
@@ -114,6 +122,12 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         plan = await SubscriptionPlan.findById(planId);
       } else {
         plan = phaseOneSubscriptionPlans.find((p: any) => p.id === planId || p._id === planId);
+      }
+      
+      if (!plan) {
+        if (planId === "rw") plan = { name: "Reading & Writing Module" };
+        else if (planId === "math") plan = { name: "Math Module" };
+        else if (planId === "bundle") plan = { name: "Complete SAT Prep" };
       }
       
       const expiry = new Date();

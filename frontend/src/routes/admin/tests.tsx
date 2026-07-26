@@ -35,6 +35,7 @@ function AdminTests() {
   const [activeTestForQuestions, setActiveTestForQuestions] = useState<any | null>(null);
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [questionType, setQuestionType] = useState<"MCQ" | "SPR">("MCQ");
   const [questionForm, setQuestionForm] = useState({
     text: "",
     optA: "",
@@ -87,6 +88,8 @@ function AdminTests() {
 
   const startEditQuestion = (q: any) => {
     setEditingQuestionId(q._id);
+    const isSpr = !q.options || q.options.length === 0;
+    setQuestionType(isSpr ? "SPR" : "MCQ");
     setQuestionForm({
       text: q.text,
       optA: q.options[0]?.text || "",
@@ -101,19 +104,26 @@ function AdminTests() {
 
   const handleSaveQuestion = async (qId: string) => {
     setQuestionError("");
-    if (!questionForm.text || !questionForm.optA || !questionForm.optB || !questionForm.optC || !questionForm.optD) {
-      setQuestionError("Question text and all four options are required.");
-      return;
+    if (questionType === "MCQ") {
+      if (!questionForm.text || !questionForm.optA || !questionForm.optB || !questionForm.optC || !questionForm.optD) {
+        setQuestionError("Question text and all four options are required for multiple choice questions.");
+        return;
+      }
+    } else {
+      if (!questionForm.text || !questionForm.correctAnswer) {
+        setQuestionError("Question text and correct answer are required.");
+        return;
+      }
     }
     setQuestionSubmitting(true);
     const body = {
       text: questionForm.text,
-      options: [
+      options: questionType === "MCQ" ? [
         { label: "A", text: questionForm.optA },
         { label: "B", text: questionForm.optB },
         { label: "C", text: questionForm.optC },
         { label: "D", text: questionForm.optD },
-      ],
+      ] : [],
       correctAnswer: questionForm.correctAnswer,
       explanation: questionForm.explanation,
     };
@@ -369,30 +379,66 @@ function AdminTests() {
                             rows={3}
                             required
                           />
-
-                          <div className="space-y-3 pt-2">
-                            <label className="block font-mono text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Options *</label>
-                            {(["A", "B", "C", "D"] as const).map((label) => (
-                              <div key={label} className="flex items-center gap-3">
-                                <span className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${questionForm.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high"}`}>{label}</span>
-                                <input
-                                  type="text"
-                                  value={questionForm[`opt${label}` as keyof typeof questionForm]}
-                                  onChange={(e) => setQuestionForm(p => ({ ...p, [`opt${label}`]: e.target.value }))}
-                                  placeholder={`Option ${label}`}
-                                  className="flex-1 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2 text-sm outline-none focus:border-primary transition-colors"
-                                  required
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setQuestionForm(p => ({ ...p, correctAnswer: label }))}
-                                  className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${questionForm.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high hover:bg-surface-container-highest"}`}
-                                >
-                                  {questionForm.correctAnswer === label ? "Correct" : "Set"}
-                                </button>
-                              </div>
-                            ))}
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <Select
+                              label="Question Type"
+                              value={questionType}
+                              onChange={(e) => {
+                                const newType = e.target.value as "MCQ" | "SPR";
+                                setQuestionType(newType);
+                                if (newType === "SPR") {
+                                  if (["A", "B", "C", "D"].includes(questionForm.correctAnswer)) {
+                                    setQuestionForm(p => ({ ...p, correctAnswer: "" }));
+                                  }
+                                } else {
+                                  if (!["A", "B", "C", "D"].includes(questionForm.correctAnswer)) {
+                                    setQuestionForm(p => ({ ...p, correctAnswer: "A" }));
+                                  }
+                                }
+                              }}
+                              options={[
+                                { value: "MCQ", label: "Multiple Choice (MCQ)" },
+                                { value: "SPR", label: "Fill-in-the-blank (SPR)" }
+                              ]}
+                            />
                           </div>
+
+                          {questionType === "MCQ" ? (
+                            <div className="space-y-3 pt-2">
+                              <label className="block font-mono text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Options *</label>
+                              {(["A", "B", "C", "D"] as const).map((label) => (
+                                <div key={label} className="flex items-center gap-3">
+                                  <span className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${questionForm.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high"}`}>{label}</span>
+                                  <input
+                                    type="text"
+                                    value={questionForm[`opt${label}` as keyof typeof questionForm]}
+                                    onChange={(e) => setQuestionForm(p => ({ ...p, [`opt${label}`]: e.target.value }))}
+                                    placeholder={`Option ${label}`}
+                                    className="flex-1 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2 text-sm outline-none focus:border-primary transition-colors"
+                                    required
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setQuestionForm(p => ({ ...p, correctAnswer: label }))}
+                                    className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${questionForm.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high hover:bg-surface-container-highest"}`}
+                                  >
+                                    {questionForm.correctAnswer === label ? "Correct" : "Set"}
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="space-y-2 pt-2">
+                              <Input
+                                label="Correct Answer *"
+                                value={questionForm.correctAnswer}
+                                onChange={(e) => setQuestionForm(p => ({ ...p, correctAnswer: e.target.value }))}
+                                required
+                                placeholder="e.g. 5, -1/2, or 4.25 (support multiple options using 'or')"
+                              />
+                            </div>
+                          )}
 
                           <Textarea
                             label="Explanation"
@@ -435,7 +481,7 @@ function AdminTests() {
                           
                           <p className="text-sm font-medium text-on-surface leading-relaxed whitespace-pre-wrap">{q.text}</p>
                           
-                          {q.options && q.options.length > 0 && (
+                          {q.options && q.options.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                               {q.options.map((opt: any) => (
                                 <div
@@ -450,6 +496,11 @@ function AdminTests() {
                                   <span>{opt.text}</span>
                                 </div>
                               ))}
+                            </div>
+                          ) : (
+                            <div className="p-2.5 rounded-lg border border-primary/20 bg-primary/5 text-primary text-xs flex gap-2 items-center mt-2">
+                              <span className="font-bold">Correct Answer:</span>
+                              <span className="font-mono">{q.correctAnswer}</span>
                             </div>
                           )}
 

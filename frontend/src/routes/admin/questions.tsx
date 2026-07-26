@@ -30,6 +30,7 @@ function AdminQuestions() {
   // Create/Edit modal
   const [modalOpen, setModalOpen] = useState(false);
   const [editingQ, setEditingQ] = useState<Question | null>(null);
+  const [questionType, setQuestionType] = useState<"MCQ" | "SPR">("MCQ");
   const [form, setForm] = useState({
     text: "", correctAnswer: "A", explanation: "", category: "", difficulty: "MEDIUM", section: "MATH",
     tags: "", imageUrl: "",
@@ -113,6 +114,7 @@ function AdminQuestions() {
 
   const openCreate = () => {
     setEditingQ(null);
+    setQuestionType("MCQ");
     setForm({ text: "", correctAnswer: "A", explanation: "", category: categories[0]?._id || "", difficulty: "MEDIUM", section: "MATH", tags: "", imageUrl: "", optA: "", optB: "", optC: "", optD: "" });
     setFormError("");
     setImageUploadError("");
@@ -122,6 +124,8 @@ function AdminQuestions() {
   const openEdit = (q: Question) => {
     setEditingQ(q);
     const cat = typeof q.category === "object" ? q.category._id : q.category;
+    const isSpr = !q.options || q.options.length === 0;
+    setQuestionType(isSpr ? "SPR" : "MCQ");
     setForm({
       text: q.text, correctAnswer: q.correctAnswer, explanation: q.explanation,
       category: cat, difficulty: q.difficulty, section: q.section,
@@ -137,17 +141,24 @@ function AdminQuestions() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
-    if (!form.text || !form.optA || !form.optB || !form.optC || !form.optD) {
-      setFormError("Question text and all four options are required.");
-      return;
+    if (questionType === "MCQ") {
+      if (!form.text || !form.optA || !form.optB || !form.optC || !form.optD) {
+        setFormError("Question text and all four options are required for multiple choice questions.");
+        return;
+      }
+    } else {
+      if (!form.text || !form.correctAnswer) {
+        setFormError("Question text and correct answer are required.");
+        return;
+      }
     }
     setSubmitting(true);
     const body = {
       text: form.text,
-      options: [
+      options: questionType === "MCQ" ? [
         { label: "A", text: form.optA }, { label: "B", text: form.optB },
         { label: "C", text: form.optC }, { label: "D", text: form.optD },
-      ],
+      ] : [],
       correctAnswer: form.correctAnswer,
       explanation: form.explanation,
       category: form.category,
@@ -341,25 +352,62 @@ function AdminQuestions() {
             </div>
           </div>
           <Textarea label="Question Text *" value={form.text} onChange={(e) => setForm((p) => ({ ...p, text: e.target.value }))} rows={3} required placeholder="Enter the question..." />
-          <div className="space-y-3">
-            <label className="mb-1.5 block font-mono text-[12px] uppercase tracking-[0.08em] text-on-surface-variant">Answer Options *</label>
-            {(["A", "B", "C", "D"] as const).map((label) => (
-              <div key={label} className="flex items-center gap-3">
-                <span className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high"}`}>{label}</span>
-                <input
-                  type="text"
-                  value={form[`opt${label}` as keyof typeof form]}
-                  onChange={(e) => setForm((p) => ({ ...p, [`opt${label}`]: e.target.value }))}
-                  placeholder={`Option ${label}`}
-                  className="flex-1 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors"
-                  required
-                />
-                <button type="button" onClick={() => setForm((p) => ({ ...p, correctAnswer: label }))} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high hover:bg-surface-container-highest"}`}>
-                  {form.correctAnswer === label ? "Correct" : "Set"}
-                </button>
-              </div>
-            ))}
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Question Type"
+              value={questionType}
+              onChange={(e) => {
+                const newType = e.target.value as "MCQ" | "SPR";
+                setQuestionType(newType);
+                if (newType === "SPR") {
+                  if (["A", "B", "C", "D"].includes(form.correctAnswer)) {
+                    setForm(p => ({ ...p, correctAnswer: "" }));
+                  }
+                } else {
+                  if (!["A", "B", "C", "D"].includes(form.correctAnswer)) {
+                    setForm(p => ({ ...p, correctAnswer: "A" }));
+                  }
+                }
+              }}
+              options={[
+                { value: "MCQ", label: "Multiple Choice (MCQ)" },
+                { value: "SPR", label: "Fill-in-the-blank (SPR)" }
+              ]}
+            />
           </div>
+
+          {questionType === "MCQ" ? (
+            <div className="space-y-3">
+              <label className="mb-1.5 block font-mono text-[12px] uppercase tracking-[0.08em] text-on-surface-variant">Answer Options *</label>
+              {(["A", "B", "C", "D"] as const).map((label) => (
+                <div key={label} className="flex items-center gap-3">
+                  <span className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high"}`}>{label}</span>
+                  <input
+                    type="text"
+                    value={form[`opt${label}` as keyof typeof form]}
+                    onChange={(e) => setForm((p) => ({ ...p, [`opt${label}`]: e.target.value }))}
+                    placeholder={`Option ${label}`}
+                    className="flex-1 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+                    required
+                  />
+                  <button type="button" onClick={() => setForm((p) => ({ ...p, correctAnswer: label }))} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${form.correctAnswer === label ? "bg-primary text-on-primary" : "bg-surface-container-high hover:bg-surface-container-highest"}`}>
+                    {form.correctAnswer === label ? "Correct" : "Set"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Input
+                label="Correct Answer *"
+                value={form.correctAnswer}
+                onChange={(e) => setForm(p => ({ ...p, correctAnswer: e.target.value }))}
+                required
+                placeholder="e.g. 5, -1/2, or 4.25 (support multiple options using 'or')"
+              />
+            </div>
+          )}
           <Textarea label="Explanation" value={form.explanation} onChange={(e) => setForm((p) => ({ ...p, explanation: e.target.value }))} rows={2} placeholder="Why is this the correct answer?" />
           <div className="grid grid-cols-3 gap-4">
             <Select

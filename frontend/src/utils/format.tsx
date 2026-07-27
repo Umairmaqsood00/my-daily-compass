@@ -27,6 +27,17 @@ export function renderFormattedText(text: string | undefined | null): React.Reac
           }
         } else if (part.startsWith("$") && part.endsWith("$")) {
           const formula = part.slice(1, -1).trim();
+          
+          // Prevent standard currency strings ($3 for the first hour and $) from being parsed as inline math.
+          // Inline LaTeX math typically doesn't contain multiple regular English words without math symbols.
+          const wordCount = formula.split(/\s+/).length;
+          const hasMathSymbol = /[=+\-*\/\\^{}()<>_]/.test(formula) || /^[a-zA-Z]$/.test(formula);
+          const isCurrency = wordCount > 2 && !hasMathSymbol;
+          
+          if (isCurrency) {
+            return part;
+          }
+          
           try {
             const html = katex.renderToString(formula, { displayMode: false, throwOnError: false });
             return (

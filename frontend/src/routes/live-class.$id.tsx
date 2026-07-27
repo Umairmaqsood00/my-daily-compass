@@ -24,8 +24,12 @@ function LiveClassRoom() {
   const [loading, setLoading] = useState(true);
   const [isSecure, setIsSecure] = useState(true);
   const [jitsiActive, setJitsiActive] = useState(false);
+  const [teacherJoinedState, setTeacherJoinedState] = useState(false);
+  const [showWhiteboard, setShowWhiteboard] = useState(false);
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
+
+  const isTeacherOrAdmin = user?.role === "ADMIN" || (user?.role === "TEACHER" && classSession && String(classSession.teacher?._id || classSession.teacher) === String(user?.id || user?._id || user?.userId));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -33,21 +37,42 @@ function LiveClassRoom() {
     }
   }, []);
 
-  // Fetch Class Details
+  // Fetch Class Details & handle polling for students
   useEffect(() => {
-    api.get(`/api/live-classes/${id}`)
-      .then((res) => {
-        if (res.success) {
-          setClassSession(res.liveClass);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [id]);
+    let interval: any;
+
+    const fetchClass = () => {
+      api.get(`/api/live-classes/${id}`)
+        .then((res) => {
+          if (res.success) {
+            setClassSession(res.liveClass);
+            setTeacherJoinedState(res.liveClass.teacherJoined);
+            
+            // If the user is a student and the teacher is not in the room yet, start polling
+            const isTeacher = user?.role === "ADMIN" || (user?.role === "TEACHER" && String(res.liveClass.teacher?._id || res.liveClass.teacher) === String(user?.id || user?._id || user?.userId));
+            if (!isTeacher && !res.liveClass.teacherJoined && !interval) {
+              interval = setInterval(fetchClass, 5000);
+            } else if (res.liveClass.teacherJoined && interval) {
+              clearInterval(interval);
+            }
+          }
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    };
+
+    fetchClass();
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [id, user]);
 
   // Load Jitsi External API Script dynamically
   useEffect(() => {
     if (loading || !classSession) return;
+    // For students, wait for the teacher to join
+    if (!isTeacherOrAdmin && !teacherJoinedState) return;
 
     // Load Jitsi external API if not already loaded
     const domain = "meet.systemli.org";
@@ -66,8 +91,12 @@ function LiveClassRoom() {
         jitsiApiRef.current.dispose();
         setJitsiActive(false);
       }
+      if (isTeacherOrAdmin) {
+        api.put(`/api/live-classes/${id}/teacher-joined`, { teacherJoined: false })
+          .catch(err => console.error("Error setting teacher left status:", err));
+      }
     };
-  }, [loading, classSession]);
+  }, [loading, classSession, teacherJoinedState]);
 
   const initJitsi = () => {
     if (!jitsiContainerRef.current || !classSession) return;
@@ -94,10 +123,30 @@ function LiveClassRoom() {
         openBridgeToContent: true,
         // Etherpad shared document configuration
         etherpad_base: "https://etherpad.meet.jit.si/p/",
-        // Enable whiteboard
+        // Enable whiteboard with public Cloudflare excalidraw server
         whiteboard: {
           enabled: true,
           collaborative: true,
+          collabServerBaseUrl: "https://excalidraw-backend.cloudflare.jitsi.net",
+        },
+        toolbarButtons: isTeacherOrAdmin
+          ? [
+              'microphone', 'camera', 'closedcaptions', 'desktop', 'embedmeeting',
+              'fullscreen', 'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+              'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+              'videoquality', 'filmstrip', 'feedback', 'stats', 'shortcuts',
+              'tileview', 'select-background', 'help', 'mute-everyone', 'mute-video-everyone',
+              'security', 'whiteboard'
+            ]
+          : [
+              'microphone', 'camera', 'closedcaptions', 'desktop',
+              'fullscreen', 'fodeviceselection', 'hangup', 'profile', 'chat',
+              'settings', 'raisehand', 'videoquality', 'filmstrip',
+              'tileview', 'select-background', 'help', 'whiteboard'
+            ],
+        disableRemoteMute: !isTeacherOrAdmin,
+        remoteVideoSettings: {
+          disableKick: !isTeacherOrAdmin,
         },
       },
       interfaceConfigOverwrite: {
@@ -105,11 +154,31 @@ function LiveClassRoom() {
         SHOW_BRAND_WATERMARK: false,
         MOBILE_APP_PROMO: false,
         SHOW_CHROME_EXTENSION_BANNER: false,
+        TOOLBAR_BUTTONS: isTeacherOrAdmin
+          ? [
+              'microphone', 'camera', 'closedcaptions', 'desktop', 'embedmeeting',
+              'fullscreen', 'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+              'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+              'videoquality', 'filmstrip', 'feedback', 'stats', 'shortcuts',
+              'tileview', 'select-background', 'help', 'mute-everyone', 'mute-video-everyone',
+              'security', 'whiteboard'
+            ]
+          : [
+              'microphone', 'camera', 'closedcaptions', 'desktop',
+              'fullscreen', 'fodeviceselection', 'hangup', 'profile', 'chat',
+              'settings', 'raisehand', 'videoquality', 'filmstrip',
+              'tileview', 'select-background', 'help', 'whiteboard'
+            ],
       },
     };
 
     jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
     setJitsiActive(true);
+
+    if (isTeacherOrAdmin) {
+      api.put(`/api/live-classes/${id}/teacher-joined`, { teacherJoined: true })
+        .catch(err => console.error("Error setting teacher joined status:", err));
+    }
   };
 
   const handleEndClass = async () => {
@@ -120,6 +189,10 @@ function LiveClassRoom() {
         if (jitsiApiRef.current) {
           jitsiApiRef.current.dispose();
           setJitsiActive(false);
+        }
+        if (isTeacherOrAdmin) {
+          api.put(`/api/live-classes/${id}/teacher-joined`, { teacherJoined: false })
+            .catch(err => console.error("Error resetting teacher status:", err));
         }
         // Redirect based on role
         if (user?.role === "ADMIN") {
@@ -183,8 +256,6 @@ function LiveClassRoom() {
     }
   });
 
-  const isTeacherOrAdmin = user?.role === "ADMIN" || (user?.role === "TEACHER" && String(classSession.teacher?._id || classSession.teacher) === String(user?.id || user?._id || user?.userId));
-
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-background">
       <Header />
@@ -222,11 +293,15 @@ function LiveClassRoom() {
                 Share Screen
               </button>
               <button
-                onClick={() => jitsiApiRef.current?.executeCommand("toggleWhiteboard")}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-accent text-white font-bold text-xs rounded-xl hover:opacity-90 transition-opacity border-none cursor-pointer"
+                onClick={() => setShowWhiteboard(v => !v)}
+                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 font-bold text-xs rounded-xl transition-all border-none cursor-pointer ${
+                  showWhiteboard
+                    ? "bg-accent text-white shadow-lg ring-2 ring-accent/40"
+                    : "bg-accent text-white hover:opacity-90"
+                }`}
               >
                 <Icon name="gesture" />
-                Open Whiteboard
+                {showWhiteboard ? "Close Whiteboard" : "Open Whiteboard"}
               </button>
             </>
           )}
@@ -260,7 +335,53 @@ function LiveClassRoom() {
  
       {/* Embedded Iframe Container */}
       <div className="w-full bg-black relative" style={{ minHeight: "80vh", height: "800px" }}>
-        <div ref={jitsiContainerRef} className="w-full h-full absolute inset-0" />
+        {!isTeacherOrAdmin && !teacherJoinedState ? (
+          <div className="w-full h-full absolute inset-0 flex flex-col items-center justify-center p-8 bg-surface-container-lowest text-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <Icon name="person" className="text-3xl text-primary animate-bounce" />
+            </div>
+            <h2 className="text-2xl font-bold text-on-surface mb-2">Waiting for the Teacher</h2>
+            <p className="text-sm text-on-surface-variant max-w-md mb-6">
+              The live class has not started yet. Please wait for the teacher to join the call. The session will automatically load once they arrive.
+            </p>
+            <div className="flex items-center gap-2 text-xs font-semibold text-primary/70">
+              <span className="w-2.5 h-2.5 bg-primary rounded-full animate-ping" />
+              Polling for teacher connection...
+            </div>
+          </div>
+        ) : (
+          <div ref={jitsiContainerRef} className="w-full h-full absolute inset-0" />
+        )}
+
+        {/* Custom Whiteboard Overlay - fully independent of Jitsi server */}
+        {showWhiteboard && (
+          <div
+            className="absolute inset-0 z-50 flex flex-col"
+            style={{ background: "rgba(0,0,0,0.85)" }}
+          >
+            {/* Whiteboard toolbar */}
+            <div className="flex items-center justify-between px-4 py-2 bg-surface-container border-b border-outline-variant/40 shrink-0">
+              <div className="flex items-center gap-2">
+                <Icon name="gesture" className="text-accent" />
+                <span className="text-sm font-bold text-on-surface">Collaborative Whiteboard</span>
+                <span className="text-xs text-on-surface-variant">(powered by WBO)</span>
+              </div>
+              <button
+                onClick={() => setShowWhiteboard(false)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-error text-white text-xs font-bold rounded-lg border-none cursor-pointer hover:opacity-90 transition-opacity"
+              >
+                <Icon name="close" />
+                Close Whiteboard
+              </button>
+            </div>
+            {/* WBO board embed - use a unique room per class session */}
+            <iframe
+              src={`https://wbo.ophir.dev/boards/${classSession.roomName}`}
+              className="flex-1 w-full border-none bg-white"
+              title="Collaborative Whiteboard"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

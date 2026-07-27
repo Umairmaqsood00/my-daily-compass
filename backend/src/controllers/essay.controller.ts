@@ -3,6 +3,7 @@ import { AuthRequest } from "../middleware/auth.middleware";
 import Essay from "../models/Essay";
 import Notification from "../models/Notification";
 import User from "../models/User";
+import { appendEssayToSheet } from "../services/googleSheets.service";
 
 export const submitEssay = async (req: AuthRequest, res: Response) => {
   try {
@@ -63,6 +64,13 @@ export const submitEssay = async (req: AuthRequest, res: Response) => {
     if (adminNotifications.length > 0) {
       await Notification.insertMany(adminNotifications);
     }
+
+    // Backup to Google Sheets asynchronously in background
+    appendEssayToSheet(
+      studentUser?.name || "A student",
+      studentUser?.email || "N/A",
+      essayText || ""
+    ).catch(err => console.error("Error backing up essay to Google Sheets:", err));
 
     return res.status(201).json({ success: true, data: essay });
   } catch (error: any) {

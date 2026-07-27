@@ -9,6 +9,7 @@ export interface ILiveClass extends Document {
   roomName: string; // unique Jitsi room name
   teacher: mongoose.Schema.Types.ObjectId;
   createdBy: mongoose.Schema.Types.ObjectId;
+  teacherJoined: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,7 @@ const LiveClassSchema: Schema = new Schema(
     roomName: { type: String, required: true },
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    teacherJoined: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

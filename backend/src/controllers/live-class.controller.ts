@@ -123,3 +123,29 @@ export const deleteLiveClass = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// Update teacher joined status
+export const updateTeacherJoinedStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { teacherJoined } = req.body;
+
+    const liveClass = await LiveClass.findById(id);
+    if (!liveClass) {
+      return res.status(404).json({ success: false, error: "Class session not found" });
+    }
+
+    // Security check: only teacher or admin can modify status
+    if (req.user?.role !== "ADMIN" && String(liveClass.teacher) !== String(req.user?.userId)) {
+      return res.status(403).json({ success: false, error: "Unauthorized to update this class" });
+    }
+
+    liveClass.teacherJoined = !!teacherJoined;
+    await liveClass.save();
+
+    res.status(200).json({ success: true, liveClass });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+

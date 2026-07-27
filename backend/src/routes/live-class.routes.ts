@@ -7,6 +7,7 @@ import {
   getLiveClassById,
   updateLiveClassStatus,
   deleteLiveClass,
+  updateTeacherJoinedStatus,
 } from "../controllers/live-class.controller";
 
 const router = express.Router();
@@ -22,6 +23,9 @@ router.post("/", authenticate, requireAdminOrTeacher(), createLiveClass);
 
 // Update status (only admins or teacher assigned to the class)
 router.put("/:id/status", authenticate, requireAdminOrTeacher(), updateLiveClassStatus);
+
+// Update teacher joined status (only admins or teacher assigned to the class)
+router.put("/:id/teacher-joined", authenticate, requireAdminOrTeacher(), updateTeacherJoinedStatus);
 
 // Delete class (only creator or admin)
 router.delete("/:id", authenticate, requireAdminOrTeacher(), deleteLiveClass);

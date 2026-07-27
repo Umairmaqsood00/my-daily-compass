@@ -23,6 +23,7 @@ function LiveClassRoom() {
   const [classSession, setClassSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSecure, setIsSecure] = useState(true);
+  const [jitsiActive, setJitsiActive] = useState(false);
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
 
@@ -63,6 +64,7 @@ function LiveClassRoom() {
     return () => {
       if (jitsiApiRef.current) {
         jitsiApiRef.current.dispose();
+        setJitsiActive(false);
       }
     };
   }, [loading, classSession]);
@@ -107,6 +109,7 @@ function LiveClassRoom() {
     };
 
     jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
+    setJitsiActive(true);
   };
 
   const handleEndClass = async () => {
@@ -116,6 +119,7 @@ function LiveClassRoom() {
       if (res.success) {
         if (jitsiApiRef.current) {
           jitsiApiRef.current.dispose();
+          setJitsiActive(false);
         }
         // Redirect based on role
         if (user?.role === "ADMIN") {
@@ -208,6 +212,24 @@ function LiveClassRoom() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          {jitsiActive && isTeacherOrAdmin && (
+            <>
+              <button
+                onClick={() => jitsiApiRef.current?.executeCommand("toggleShareScreen")}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 font-bold text-xs rounded-xl hover:bg-primary/25 transition-colors cursor-pointer"
+              >
+                <Icon name="screen_share" />
+                Share Screen
+              </button>
+              <button
+                onClick={() => jitsiApiRef.current?.executeCommand("toggleWhiteboard")}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-accent text-white font-bold text-xs rounded-xl hover:opacity-90 transition-opacity border-none cursor-pointer"
+              >
+                <Icon name="gesture" />
+                Open Whiteboard
+              </button>
+            </>
+          )}
           <button
             onClick={handleFullscreen}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-surface-container-high text-on-surface font-bold text-xs rounded-xl hover:bg-surface-container-highest transition-colors border-none cursor-pointer"

@@ -42,7 +42,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/sat" className="hover:text-accent transition-colors duration-300">
+                <Link to="/sat" hash="pricing" className="hover:text-accent transition-colors duration-300">
                   Pricing & Plans
                 </Link>
               </li>

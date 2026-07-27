@@ -27,7 +27,7 @@ export function Header() {
   const links = [
     { to: "/", hash: "services", label: "Services" },
     { to: "/university-matcher", hash: undefined, label: "University Matcher" },
-    { to: "/sat", hash: undefined, label: "Pricing" },
+    { to: "/sat", hash: "pricing", label: "Pricing" },
     { to: "/contact", hash: undefined, label: "Contact" },
     ...(user?.role === "STUDENT" ? [{ to: "/dashboard/", hash: undefined, label: "Dashboard" }] : []),
     ...(user?.role === "ADMIN" ? [{ to: "/admin", hash: undefined, label: "Admin Panel" }] : []),

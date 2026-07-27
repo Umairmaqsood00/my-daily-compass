@@ -296,7 +296,7 @@ function SATPrepPage() {
           <div className="bg-gradient-to-br from-[#0B1929] via-[#162D4D] to-[#1A3558] py-10 px-6 text-center">
             <div className="max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 bg-accent/15 border border-accent/30 rounded-full px-4 py-1.5 mb-6">
-                <span className="font-mono text-xs font-bold text-accent tracking-widest uppercase">SAT / ACT Preparation</span>
+                <span className="font-mono text-xs font-bold text-accent tracking-widest uppercase">SAT Preparation</span>
               </div>
               <h1 className="font-display text-4xl font-extrabold text-white leading-tight mb-4 tracking-tight md:text-5xl">
                 Stop Guessing.<br />
@@ -325,7 +325,7 @@ function SATPrepPage() {
           </div>
 
           {/* Cards */}
-          <div className="max-w-[880px] mx-auto px-6">
+          <div id="pricing" className="max-w-[880px] mx-auto px-6">
 
             {/* Tier Toggle */}
             <div className="flex justify-center gap-1 mt-8 mx-auto bg-surface-container-lowest rounded-2xl p-1.5 shadow-sm border border-outline-variant/40 max-w-sm">
@@ -478,19 +478,30 @@ function SATPrepPage() {
                 Not sure which format is right for you? We'll help you decide — no pressure.
               </p>
               <a
-                href="https://wa.me/923164514334?text=Hi%20I%2520would%2520like%2520to%2520take%2520a%2520free%2520trial%2520for%2520SAT%2520prep%2520or%2520wanna%2520know%2520brief%2520thing%2520about%2520SAT%2520prep."
+                href="https://wa.me/923164514334?text=Hi%20I%20would%20like%20to%20get%20more%20info%20about%20SAT%20prep."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-xs font-bold uppercase tracking-[0.08em] text-on-primary shark-shadow hover:bg-accent transition-all duration-300"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: "#25D366",
+                  color: "#FFFFFF",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  padding: "14px 32px",
+                  borderRadius: "12px",
+                  textDecoration: "none",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 4px 16px rgba(37,211,102,0.2)",
+                }}
+                className="hover:scale-[1.02] transition-transform"
               >
-                Book a Free Trial Session
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.333 4.982L2 22l5.233-1.371a9.936 9.936 0 004.779 1.22h.004c5.505 0 9.989-4.478 9.99-9.985A9.983 9.983 0 0012.012 2zm4.957 14.215c-.273.767-1.561 1.481-2.148 1.54-.58.06-1.169.311-3.709-.738-3.252-1.344-5.344-4.657-5.507-4.877-.162-.22-1.302-1.733-1.302-3.31 0-1.579.825-2.353 1.116-2.65.29-.297.77-.381 1.008-.381.238 0 .476.002.68.01.209.009.49-.078.766.587.283.682.966 2.356 1.05 2.528.083.172.138.373.023.602-.114.23-.172.373-.341.57-.169.196-.355.439-.508.587-.168.163-.344.341-.148.68.196.34 0 .34.872 1.121 1.125.998 2.08 1.307 2.375 1.454.296.147.47.127.646-.076.177-.203.766-.89.972-1.192.206-.303.411-.254.694-.148.283.106 1.796.848 2.106 1.002.311.155.518.23.593.36.074.13.074.754-.2 1.521z" />
                 </svg>
+                GET MORE INFO ON WHATSAPP
               </a>
-              <p className="font-mono text-[10px] md:text-xs text-on-surface-variant/60 mt-4 uppercase tracking-widest">
-                satsharks.org  ·  0316 451 4334
-              </p>
             </div>
           </div>
 
@@ -862,5 +873,3 @@ function SATPrepPage() {
     </div>
   );
 }
-
-export default SATPrepPage;

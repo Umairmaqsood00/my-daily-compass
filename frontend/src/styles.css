@@ -202,6 +202,18 @@
     "opsz" 24;
 }
 
+/* Keep question equations crisp and independent of bold surrounding prompt text. */
+.math-typeset,
+.math-typeset .katex {
+  font-weight: 400;
+}
+
+.math-typeset .katex,
+.math-typeset .katex-html,
+.math-typeset .sqrt {
+  overflow: visible;
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   *,

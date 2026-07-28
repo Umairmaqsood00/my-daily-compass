@@ -25,7 +25,6 @@ import { Route as TeacherStudyMaterialsRouteImport } from './routes/teacher/stud
 import { Route as TeacherClassesRouteImport } from './routes/teacher/classes'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
-import { Route as LiveClassIdRouteImport } from './routes/live-class.$id'
 import { Route as DashboardStudyMaterialsRouteImport } from './routes/dashboard/study-materials'
 import { Route as DashboardSatTestsRouteImport } from './routes/dashboard/sat-tests'
 import { Route as DashboardPracticeRouteImport } from './routes/dashboard/practice'
@@ -135,11 +134,6 @@ const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
 const PaymentCancelRoute = PaymentCancelRouteImport.update({
   id: '/payment/cancel',
   path: '/payment/cancel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveClassIdRoute = LiveClassIdRouteImport.update({
-  id: '/live-class/$id',
-  path: '/live-class/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardStudyMaterialsRoute = DashboardStudyMaterialsRouteImport.update({
@@ -331,7 +325,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/practice': typeof DashboardPracticeRoute
   '/dashboard/sat-tests': typeof DashboardSatTestsRoute
   '/dashboard/study-materials': typeof DashboardStudyMaterialsRoute
-  '/live-class/$id': typeof LiveClassIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/teacher/classes': typeof TeacherClassesRoute
@@ -378,7 +371,6 @@ export interface FileRoutesByTo {
   '/dashboard/practice': typeof DashboardPracticeRoute
   '/dashboard/sat-tests': typeof DashboardSatTestsRoute
   '/dashboard/study-materials': typeof DashboardStudyMaterialsRoute
-  '/live-class/$id': typeof LiveClassIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/teacher/classes': typeof TeacherClassesRoute
@@ -428,7 +420,6 @@ export interface FileRoutesById {
   '/dashboard/practice': typeof DashboardPracticeRoute
   '/dashboard/sat-tests': typeof DashboardSatTestsRoute
   '/dashboard/study-materials': typeof DashboardStudyMaterialsRoute
-  '/live-class/$id': typeof LiveClassIdRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/teacher/classes': typeof TeacherClassesRoute
@@ -479,7 +470,6 @@ export interface FileRouteTypes {
     | '/dashboard/practice'
     | '/dashboard/sat-tests'
     | '/dashboard/study-materials'
-    | '/live-class/$id'
     | '/payment/cancel'
     | '/payment/success'
     | '/teacher/classes'
@@ -526,7 +516,6 @@ export interface FileRouteTypes {
     | '/dashboard/practice'
     | '/dashboard/sat-tests'
     | '/dashboard/study-materials'
-    | '/live-class/$id'
     | '/payment/cancel'
     | '/payment/success'
     | '/teacher/classes'
@@ -575,7 +564,6 @@ export interface FileRouteTypes {
     | '/dashboard/practice'
     | '/dashboard/sat-tests'
     | '/dashboard/study-materials'
-    | '/live-class/$id'
     | '/payment/cancel'
     | '/payment/success'
     | '/teacher/classes'
@@ -617,7 +605,6 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
-  LiveClassIdRoute: typeof LiveClassIdRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   TeacherClassesRoute: typeof TeacherClassesRoute
@@ -739,13 +726,6 @@ declare module '@tanstack/react-router' {
       path: '/payment/cancel'
       fullPath: '/payment/cancel'
       preLoaderRoute: typeof PaymentCancelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live-class/$id': {
-      id: '/live-class/$id'
-      path: '/live-class/$id'
-      fullPath: '/live-class/$id'
-      preLoaderRoute: typeof LiveClassIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/study-materials': {
@@ -1034,7 +1014,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
-  LiveClassIdRoute: LiveClassIdRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   TeacherClassesRoute: TeacherClassesRoute,

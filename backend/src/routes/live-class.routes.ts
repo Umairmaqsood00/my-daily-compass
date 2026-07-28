@@ -6,8 +6,8 @@ import {
   getLiveClasses,
   getLiveClassById,
   updateLiveClassStatus,
+  updateMeetLink,
   deleteLiveClass,
-  updateTeacherJoinedStatus,
 } from "../controllers/live-class.controller";
 
 const router = express.Router();
@@ -24,8 +24,8 @@ router.post("/", authenticate, requireAdminOrTeacher(), createLiveClass);
 // Update status (only admins or teacher assigned to the class)
 router.put("/:id/status", authenticate, requireAdminOrTeacher(), updateLiveClassStatus);
 
-// Update teacher joined status (only admins or teacher assigned to the class)
-router.put("/:id/teacher-joined", authenticate, requireAdminOrTeacher(), updateTeacherJoinedStatus);
+// Set/update the Google Meet link (only admins or teacher assigned to the class)
+router.put("/:id/meet-link", authenticate, requireAdminOrTeacher(), updateMeetLink);
 
 // Delete class (only creator or admin)
 router.delete("/:id", authenticate, requireAdminOrTeacher(), deleteLiveClass);

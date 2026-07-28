@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { AdminLayout } from "../../components/layout/AdminLayout";
 import { useState, useEffect } from "react";
 import { api } from "../../services/api";
@@ -8,6 +8,7 @@ import { Modal } from "../../components/ui/Modal";
 import { Input } from "../../components/ui/Input";
 import { Textarea } from "../../components/ui/Textarea";
 import { Select } from "../../components/ui/Select";
+import { isValidHttpsUrl, looksLikeGoogleMeetLink } from "../../utils/meetLink";
 
 export const Route = createFileRoute("/admin/classes")({
   component: () => (
@@ -31,7 +32,14 @@ function AdminClasses() {
     scheduledAt: "",
     duration: 60,
     teacherId: "",
+    meetLink: "",
   });
+
+  // Meet link edit modal state
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkModalClassId, setLinkModalClassId] = useState<string | null>(null);
+  const [linkModalValue, setLinkModalValue] = useState("");
+  const [linkSubmitting, setLinkSubmitting] = useState(false);
 
   const fetchClassesAndTeachers = async () => {
     setLoading(true);
@@ -59,13 +67,18 @@ function AdminClasses() {
       return;
     }
 
+    if (form.meetLink && !isValidHttpsUrl(form.meetLink)) {
+      alert("Google Meet link must be a valid https:// URL.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await api.post("/api/live-classes", form);
       if (res.success) {
         fetchClassesAndTeachers();
         setModalOpen(false);
-        setForm({ title: "", description: "", scheduledAt: "", duration: 60, teacherId: "" });
+        setForm({ title: "", description: "", scheduledAt: "", duration: 60, teacherId: "", meetLink: "" });
       } else {
         alert(res.error || "Failed to schedule class.");
       }
@@ -73,6 +86,35 @@ function AdminClasses() {
       alert("Error scheduling class.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openLinkModal = (c: any) => {
+    setLinkModalClassId(c._id);
+    setLinkModalValue(c.meetLink || "");
+    setLinkModalOpen(true);
+  };
+
+  const handleSaveMeetLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkModalValue || !isValidHttpsUrl(linkModalValue)) {
+      alert("Please enter a valid https:// Google Meet link.");
+      return;
+    }
+
+    setLinkSubmitting(true);
+    try {
+      const res = await api.put(`/api/live-classes/${linkModalClassId}/meet-link`, { meetLink: linkModalValue });
+      if (res.success) {
+        fetchClassesAndTeachers();
+        setLinkModalOpen(false);
+      } else {
+        alert(res.error || "Failed to save Meet link.");
+      }
+    } catch (err) {
+      alert("Error saving Meet link.");
+    } finally {
+      setLinkSubmitting(false);
     }
   };
 
@@ -176,6 +218,14 @@ function AdminClasses() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
+                        {(c.status === "SCHEDULED" || c.status === "LIVE") && (
+                          <button
+                            onClick={() => openLinkModal(c)}
+                            className="px-3 py-1.5 bg-secondary/10 text-secondary hover:bg-secondary/20 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border-none"
+                          >
+                            <Icon name="link" className="text-[14px]" /> {c.meetLink ? "Edit Link" : "Set Link"}
+                          </button>
+                        )}
                         {c.status === "SCHEDULED" && (
                           <button
                             onClick={() => handleUpdateStatus(c._id, "LIVE")}
@@ -186,13 +236,13 @@ function AdminClasses() {
                         )}
                         {c.status === "LIVE" && (
                           <>
-                            <Link
-                              to="/live-class/$id"
-                              params={{ id: c._id }}
-                              className="px-3 py-1.5 bg-success/15 text-success hover:bg-success/25 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+                            <button
+                              onClick={() => c.meetLink && window.open(c.meetLink, "_blank", "noopener,noreferrer")}
+                              disabled={!c.meetLink}
+                              className="px-3 py-1.5 bg-success/15 text-success hover:bg-success/25 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <Icon name="video_call" className="text-[14px]" /> Join
-                            </Link>
+                              <Icon name="video_call" className="text-[14px]" /> Open Meet
+                            </button>
                             <button
                               onClick={() => handleUpdateStatus(c._id, "COMPLETED")}
                               className="px-3 py-1.5 bg-on-surface-variant/10 text-on-surface-variant hover:bg-on-surface-variant/15 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer border-none"
@@ -270,6 +320,21 @@ function AdminClasses() {
             />
           )}
 
+          <div>
+            <Input
+              type="url"
+              label="Google Meet Link (optional)"
+              value={form.meetLink}
+              onChange={(e) => setForm({ ...form, meetLink: e.target.value })}
+              placeholder="https://meet.google.com/xxx-xxxx-xxx"
+            />
+            {form.meetLink && isValidHttpsUrl(form.meetLink) && !looksLikeGoogleMeetLink(form.meetLink) && (
+              <p className="mt-1.5 text-xs text-accent">
+                This doesn't look like a Google Meet link — double check before saving.
+              </p>
+            )}
+          </div>
+
           <div className="flex gap-4 pt-4 border-t border-outline-variant/30 mt-6">
             <button
               type="button"
@@ -284,6 +349,41 @@ function AdminClasses() {
               className="flex-1 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-accent font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-sm text-xs border-none"
             >
               {submitting ? "Scheduling..." : "Schedule Session"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Meet Link Modal */}
+      <Modal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} title="Set Google Meet Link">
+        <form onSubmit={handleSaveMeetLink} className="space-y-4">
+          <Input
+            type="url"
+            label="Google Meet Link *"
+            value={linkModalValue}
+            onChange={(e) => setLinkModalValue(e.target.value)}
+            placeholder="https://meet.google.com/xxx-xxxx-xxx"
+            required
+          />
+          {linkModalValue && isValidHttpsUrl(linkModalValue) && !looksLikeGoogleMeetLink(linkModalValue) && (
+            <p className="text-xs text-accent">
+              This doesn't look like a Google Meet link — double check before saving.
+            </p>
+          )}
+          <div className="flex gap-4 pt-4 border-t border-outline-variant/30 mt-6">
+            <button
+              type="button"
+              onClick={() => setLinkModalOpen(false)}
+              className="flex-1 py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container-low text-xs font-bold transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={linkSubmitting}
+              className="flex-1 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-accent font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-sm text-xs border-none"
+            >
+              {linkSubmitting ? "Saving..." : "Save Link"}
             </button>
           </div>
         </form>

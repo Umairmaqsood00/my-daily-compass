@@ -1,6 +1,123 @@
 import React from "react";
 import katex from "katex";
 
+const FRACTION_PATTERN =
+  /(?<![\wπ/])(-?[A-Za-z0-9π]+°?)\/([A-Za-z0-9π]+°?)(?![\wπ/])/g;
+
+function normalizeRoots(formula: string): string {
+  let result = "";
+
+  for (let index = 0; index < formula.length; index += 1) {
+    if (formula[index] !== "√") {
+      result += formula[index];
+      continue;
+    }
+
+    let radicandStart = index + 1;
+    while (formula[radicandStart] === " ") radicandStart += 1;
+
+    if (formula[radicandStart] === "(") {
+      let depth = 0;
+      let radicandEnd = radicandStart;
+
+      for (; radicandEnd < formula.length; radicandEnd += 1) {
+        if (formula[radicandEnd] === "(") depth += 1;
+        if (formula[radicandEnd] === ")") depth -= 1;
+        if (depth === 0) break;
+      }
+
+      if (depth === 0) {
+        const radicand = formula.slice(radicandStart + 1, radicandEnd);
+        result += String.raw`\sqrt{${radicand}}`;
+        index = radicandEnd;
+        continue;
+      }
+    }
+
+    const simpleRadicand = formula.slice(radicandStart).match(/^[A-Za-z0-9π]+(?:\.[0-9]+)?/);
+    if (simpleRadicand) {
+      result += String.raw`\sqrt{${simpleRadicand[0]}}`;
+      index = radicandStart + simpleRadicand[0].length - 1;
+      continue;
+    }
+
+    result += formula[index];
+  }
+
+  return result;
+}
+
+function normalizeMath(formula: string): string {
+  return normalizeRoots(formula)
+    // Convert simple slash fractions while leaving existing LaTeX commands untouched.
+    .replace(FRACTION_PATTERN, String.raw`\frac{$1}{$2}`);
+}
+
+function renderMath(formula: string, displayMode: boolean): string {
+  return katex.renderToString(normalizeMath(formula), {
+    displayMode,
+    throwOnError: false,
+  });
+}
+
+function renderPlainTextMath(text: string): React.ReactNode[] {
+  const ranges: Array<{ start: number; end: number }> = [];
+
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] !== "√") continue;
+
+    let end = index + 1;
+    while (text[end] === " ") end += 1;
+
+    if (text[end] === "(") {
+      let depth = 0;
+      for (; end < text.length; end += 1) {
+        if (text[end] === "(") depth += 1;
+        if (text[end] === ")") depth -= 1;
+        if (depth === 0) {
+          end += 1;
+          break;
+        }
+      }
+    } else {
+      const radicand = text.slice(end).match(/^[A-Za-z0-9π]+(?:\.[0-9]+)?/);
+      if (radicand) end += radicand[0].length;
+    }
+
+    if (end > index + 1) ranges.push({ start: index, end });
+  }
+
+  for (const match of text.matchAll(FRACTION_PATTERN)) {
+    const start = match.index;
+    const end = start + match[0].length;
+    if (!ranges.some((range) => start >= range.start && end <= range.end)) {
+      ranges.push({ start, end });
+    }
+  }
+
+  ranges.sort((left, right) => left.start - right.start);
+  if (ranges.length === 0) return [text];
+
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+  ranges.forEach((range, index) => {
+    if (range.start > cursor) nodes.push(text.slice(cursor, range.start));
+    nodes.push(
+      <span
+        key={`math-${index}`}
+        dangerouslySetInnerHTML={{
+          __html: renderMath(text.slice(range.start, range.end), false),
+        }}
+        className="math-typeset inline-block"
+      />,
+    );
+    cursor = range.end;
+  });
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+
+  return nodes;
+}
+
 export function renderFormattedText(text: string | undefined | null): React.ReactNode {
   if (!text) return "";
   
@@ -13,12 +130,12 @@ export function renderFormattedText(text: string | undefined | null): React.Reac
         if (part.startsWith("$$") && part.endsWith("$$")) {
           const formula = part.slice(2, -2).trim();
           try {
-            const html = katex.renderToString(formula, { displayMode: true, throwOnError: false });
+            const html = renderMath(formula, true);
             return (
               <span
                 key={index}
                 dangerouslySetInnerHTML={{ __html: html }}
-                className="block my-2 overflow-x-auto font-sans"
+                className="math-typeset block my-2 overflow-x-auto"
               />
             );
           } catch (err) {
@@ -39,12 +156,12 @@ export function renderFormattedText(text: string | undefined | null): React.Reac
           }
           
           try {
-            const html = katex.renderToString(formula, { displayMode: false, throwOnError: false });
+            const html = renderMath(formula, false);
             return (
               <span
                 key={index}
                 dangerouslySetInnerHTML={{ __html: html }}
-                className="inline-block font-sans"
+                className="math-typeset inline-block"
               />
             );
           } catch (err) {
@@ -82,7 +199,7 @@ export function renderFormattedText(text: string | undefined | null): React.Reac
                     </sup>
                   );
                 }
-                return subPart;
+                return renderPlainTextMath(subPart);
               })}
             </React.Fragment>
           );

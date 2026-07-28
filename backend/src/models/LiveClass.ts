@@ -6,10 +6,9 @@ export interface ILiveClass extends Document {
   scheduledAt: Date;
   duration: number; // in minutes
   status: "SCHEDULED" | "LIVE" | "COMPLETED" | "CANCELLED";
-  roomName: string; // unique Jitsi room name
+  meetLink?: string | null;
   teacher: mongoose.Schema.Types.ObjectId;
   createdBy: mongoose.Schema.Types.ObjectId;
-  teacherJoined: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,10 +24,9 @@ const LiveClassSchema: Schema = new Schema(
       enum: ["SCHEDULED", "LIVE", "COMPLETED", "CANCELLED"],
       default: "SCHEDULED",
     },
-    roomName: { type: String, required: true },
+    meetLink: { type: String, default: null },
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    teacherJoined: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

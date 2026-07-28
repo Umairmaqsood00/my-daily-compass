@@ -111,8 +111,7 @@ function TeacherDashboard() {
                       </div>
 
                       <Link
-                        to="/live-class/$id"
-                        params={{ id: c._id }}
+                        to="/teacher/classes"
                         className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
                           c.status === "LIVE"
                             ? "bg-success text-white hover:opacity-90"
@@ -120,7 +119,7 @@ function TeacherDashboard() {
                         }`}
                       >
                         <Icon name="video_call" />
-                        {c.status === "LIVE" ? "Join Call" : "Start Call"}
+                        {c.status === "LIVE" ? "Manage Call" : "Start Call"}
                       </Link>
                     </div>
                   ))}

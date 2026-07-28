@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { TeacherLayout } from "../../components/layout/TeacherLayout";
 import { useState, useEffect } from "react";
 import { api } from "../../services/api";
@@ -8,6 +8,7 @@ import { Modal } from "../../components/ui/Modal";
 import { Input } from "../../components/ui/Input";
 import { Textarea } from "../../components/ui/Textarea";
 import { useAuth } from "../../hooks/useAuth";
+import { isValidHttpsUrl, looksLikeGoogleMeetLink } from "../../utils/meetLink";
 
 export const Route = createFileRoute("/teacher/classes")({
   component: TeacherClasses,
@@ -15,7 +16,6 @@ export const Route = createFileRoute("/teacher/classes")({
 
 function TeacherClasses() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,7 +29,14 @@ function TeacherClasses() {
     description: "",
     scheduledAt: "",
     duration: 60,
+    meetLink: "",
   });
+
+  // Meet link edit modal state
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkModalClassId, setLinkModalClassId] = useState<string | null>(null);
+  const [linkModalValue, setLinkModalValue] = useState("");
+  const [linkSubmitting, setLinkSubmitting] = useState(false);
 
   const fetchClasses = () => {
     setLoading(true);
@@ -51,6 +58,11 @@ function TeacherClasses() {
     e.preventDefault();
     if (!form.title || !form.scheduledAt) return;
 
+    if (form.meetLink && !isValidHttpsUrl(form.meetLink)) {
+      alert("Google Meet link must be a valid https:// URL.");
+      return;
+    }
+
     setSubmitting(true);
     console.log("Create Class Submission - User Context:", user);
     try {
@@ -67,13 +79,7 @@ function TeacherClasses() {
       if (res.success) {
         fetchClasses();
         setModalOpen(false);
-        setForm({ title: "", description: "", scheduledAt: "", duration: 60 });
-        
-        // Mark as LIVE and navigate immediately for testing
-        if (res.liveClass?._id) {
-          await api.put(`/api/live-classes/${res.liveClass._id}/status`, { status: "LIVE" });
-          navigate({ to: "/live-class/$id", params: { id: res.liveClass._id } });
-        }
+        setForm({ title: "", description: "", scheduledAt: "", duration: 60, meetLink: "" });
       } else {
         alert(res.error || "Failed to create class session.");
       }
@@ -81,6 +87,35 @@ function TeacherClasses() {
       alert("Error creating class session.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openLinkModal = (c: any) => {
+    setLinkModalClassId(c._id);
+    setLinkModalValue(c.meetLink || "");
+    setLinkModalOpen(true);
+  };
+
+  const handleSaveMeetLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkModalValue || !isValidHttpsUrl(linkModalValue)) {
+      alert("Please enter a valid https:// Google Meet link.");
+      return;
+    }
+
+    setLinkSubmitting(true);
+    try {
+      const res = await api.put(`/api/live-classes/${linkModalClassId}/meet-link`, { meetLink: linkModalValue });
+      if (res.success) {
+        fetchClasses();
+        setLinkModalOpen(false);
+      } else {
+        alert(res.error || "Failed to save Meet link.");
+      }
+    } catch (err) {
+      alert("Error saving Meet link.");
+    } finally {
+      setLinkSubmitting(false);
     }
   };
 
@@ -145,9 +180,6 @@ function TeacherClasses() {
                   >
                     {c.status}
                   </Badge>
-                  <span className="text-[11px] text-on-surface-variant font-mono">
-                    ID: {c.roomName}
-                  </span>
                 </div>
 
                 <h3 className="text-lg font-bold text-on-surface mb-1.5">{c.title}</h3>
@@ -169,17 +201,25 @@ function TeacherClasses() {
               </div>
 
               <div className="flex items-center gap-3">
+                {(c.status === "SCHEDULED" || c.status === "LIVE") && (
+                  <button
+                    onClick={() => openLinkModal(c)}
+                    className="px-4 py-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-xs font-bold text-on-surface-variant transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Icon name="link" />
+                    {c.meetLink ? "Edit Link" : "Set Link"}
+                  </button>
+                )}
+
                 {c.status === "SCHEDULED" && (
                   <>
-                    <Link
-                      to="/live-class/$id"
-                      params={{ id: c._id }}
+                    <button
                       onClick={() => handleUpdateStatus(c._id, "LIVE")}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl text-xs font-bold hover:bg-accent transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl text-xs font-bold hover:bg-accent transition-colors cursor-pointer border-none"
                     >
                       <Icon name="play_arrow" />
                       Start Class
-                    </Link>
+                    </button>
                     <button
                       onClick={() => handleUpdateStatus(c._id, "CANCELLED")}
                       className="px-4 py-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-xs font-bold text-on-surface-variant transition-colors cursor-pointer"
@@ -191,14 +231,14 @@ function TeacherClasses() {
 
                 {c.status === "LIVE" && (
                   <>
-                    <Link
-                      to="/live-class/$id"
-                      params={{ id: c._id }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-success text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity"
+                    <button
+                      onClick={() => c.meetLink && window.open(c.meetLink, "_blank", "noopener,noreferrer")}
+                      disabled={!c.meetLink}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-success text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Icon name="video_call" />
-                      Join Live Call
-                    </Link>
+                      Open Meet
+                    </button>
                     <button
                       onClick={() => handleUpdateStatus(c._id, "COMPLETED")}
                       className="px-4 py-2.5 bg-on-surface-variant/10 text-on-surface-variant hover:bg-on-surface-variant/15 rounded-xl text-xs font-bold transition-colors cursor-pointer border-none"
@@ -261,6 +301,21 @@ function TeacherClasses() {
             />
           </div>
 
+          <div>
+            <Input
+              type="url"
+              label="Google Meet Link (optional)"
+              value={form.meetLink}
+              onChange={(e) => setForm({ ...form, meetLink: e.target.value })}
+              placeholder="https://meet.google.com/xxx-xxxx-xxx"
+            />
+            {form.meetLink && isValidHttpsUrl(form.meetLink) && !looksLikeGoogleMeetLink(form.meetLink) && (
+              <p className="mt-1.5 text-xs text-accent">
+                This doesn't look like a Google Meet link — double check before saving.
+              </p>
+            )}
+          </div>
+
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
@@ -275,6 +330,41 @@ function TeacherClasses() {
               className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-semibold text-sm hover:bg-accent transition-colors disabled:opacity-50 cursor-pointer border-none"
             >
               {submitting ? "Scheduling..." : "Schedule"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Meet Link Modal */}
+      <Modal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} title="Set Google Meet Link">
+        <form onSubmit={handleSaveMeetLink} className="space-y-4">
+          <Input
+            type="url"
+            label="Google Meet Link *"
+            value={linkModalValue}
+            onChange={(e) => setLinkModalValue(e.target.value)}
+            placeholder="https://meet.google.com/xxx-xxxx-xxx"
+            required
+          />
+          {linkModalValue && isValidHttpsUrl(linkModalValue) && !looksLikeGoogleMeetLink(linkModalValue) && (
+            <p className="text-xs text-accent">
+              This doesn't look like a Google Meet link — double check before saving.
+            </p>
+          )}
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setLinkModalOpen(false)}
+              className="px-6 py-2.5 rounded-xl border border-outline-variant/40 hover:bg-surface-container-high text-sm font-semibold transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={linkSubmitting}
+              className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-semibold text-sm hover:bg-accent transition-colors disabled:opacity-50 cursor-pointer border-none"
+            >
+              {linkSubmitting ? "Saving..." : "Save Link"}
             </button>
           </div>
         </form>

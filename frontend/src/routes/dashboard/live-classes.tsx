@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { StudentLayout } from "../../components/layout/StudentLayout";
 import { Badge } from "../../components/ui/Badge";
@@ -14,9 +14,68 @@ export const Route = createFileRoute("/dashboard/live-classes")({
   ),
 });
 
+const JOIN_BUFFER_MINUTES = 10;
+
+type JoinState =
+  | { kind: "ready"; link: string }
+  | { kind: "no-link" }
+  | { kind: "waiting"; opensAt: Date }
+  | { kind: "ended" }
+  | { kind: "cancelled" };
+
+function getJoinState(c: any, now: Date): JoinState {
+  if (c.status === "CANCELLED") return { kind: "cancelled" };
+  if (c.status === "COMPLETED") return { kind: "ended" };
+
+  const scheduledAt = new Date(c.scheduledAt);
+  const opensAt = new Date(scheduledAt.getTime() - JOIN_BUFFER_MINUTES * 60000);
+  const closesAt = new Date(scheduledAt.getTime() + (c.duration || 60) * 60000);
+  const windowOpen = c.status === "LIVE" || (now >= opensAt && now <= closesAt);
+
+  if (!windowOpen) {
+    return now > closesAt ? { kind: "ended" } : { kind: "waiting", opensAt: scheduledAt };
+  }
+  if (!c.meetLink) return { kind: "no-link" };
+  return { kind: "ready", link: c.meetLink };
+}
+
+function JoinClassButton({ classSession, now }: { classSession: any; now: Date }) {
+  const state = getJoinState(classSession, now);
+
+  if (state.kind === "ready") {
+    return (
+      <button
+        onClick={() => window.open(state.link, "_blank", "noopener,noreferrer")}
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-success text-white rounded-xl font-bold text-sm hover:opacity-95 transition-opacity cursor-pointer border-none"
+      >
+        <Icon name="video_call" /> Join Class
+      </button>
+    );
+  }
+
+  const label =
+    state.kind === "no-link"
+      ? "Waiting for Instructor"
+      : state.kind === "waiting"
+      ? `Class starts at ${state.opensAt.toLocaleString()}`
+      : state.kind === "cancelled"
+      ? "Class Cancelled"
+      : "Class Ended";
+
+  return (
+    <button
+      disabled
+      className="w-full sm:w-auto px-5 py-2.5 bg-surface-container-high text-on-surface-variant rounded-xl font-bold text-xs cursor-not-allowed border-none"
+    >
+      {label}
+    </button>
+  );
+}
+
 function StudentLiveClasses() {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     api.get("/api/live-classes")
@@ -27,6 +86,11 @@ function StudentLiveClasses() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const live = classes.filter((c) => c.status === "LIVE");
@@ -72,13 +136,7 @@ function StudentLiveClasses() {
                         <span className="font-semibold text-on-surface">Teacher:</span> {c.teacher?.name}
                       </p>
                     </div>
-                    <Link
-                      to="/live-class/$id"
-                      params={{ id: c._id }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-success text-white rounded-xl font-bold text-sm hover:opacity-95 transition-opacity"
-                    >
-                      <Icon name="video_call" /> Join Class Room
-                    </Link>
+                    <JoinClassButton classSession={c} now={now} />
                   </div>
                 ))}
               </div>
@@ -104,7 +162,7 @@ function StudentLiveClasses() {
                     <div>
                       <h3 className="font-bold text-on-surface text-base mb-1">{c.title}</h3>
                       {c.description && <p className="text-xs text-on-surface-variant mb-3 line-clamp-1">{c.description}</p>}
-                      
+
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-on-surface-variant">
                         <span className="flex items-center gap-1">
                           <Icon name="calendar_today" className="text-[14px] text-primary" />
@@ -120,13 +178,8 @@ function StudentLiveClasses() {
                         </span>
                       </div>
                     </div>
-                    
-                    <button
-                      disabled
-                      className="w-full sm:w-auto px-5 py-2.5 bg-surface-container-high text-on-surface-variant rounded-xl font-bold text-xs cursor-not-allowed border-none"
-                    >
-                      Class Not Started
-                    </button>
+
+                    <JoinClassButton classSession={c} now={now} />
                   </div>
                 ))}
               </div>
